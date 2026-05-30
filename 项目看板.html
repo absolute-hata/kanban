@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目看板</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20x%3D%222%22%20y%3D%224%22%20width%3D%2228%22%20height%3D%2224%22%20rx%3D%223%22%20fill%3D%22%234f6ef7%22%2F%3E%3Crect%20x%3D%225%22%20y%3D%229%22%20width%3D%227%22%20height%3D%2214%22%20rx%3D%221.5%22%20fill%3D%22%23fff%22%20opacity%3D%22.9%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%229%22%20width%3D%227%22%20height%3D%2214%22%20rx%3D%221.5%22%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%2F%3E%3Crect%20x%3D%2223%22%20y%3D%229%22%20width%3D%224%22%20height%3D%2214%22%20rx%3D%221.5%22%20fill%3D%22%23fff%22%20opacity%3D%22.3%22%2F%3E%3C%2Fsvg%3E" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+::selection{background:var(--primary);color:#fff}
+
+/* ====== 字体系统 ====== */
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;transition:background .3s,color .3s;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* ====== CSS 变量 ====== */
+:root{
+  --bg:#f4f6fa;--surface:#fff;--sidebar-bg:rgba(255,255,255,0.85);--sidebar-text:#334155;--sidebar-hover:rgba(79,110,247,0.06);--sidebar-active:rgba(79,110,247,0.1);--sidebar-active-text:#4f6ef7;--sidebar-border:rgba(0,0,0,0.06);--sidebar-count-bg:rgba(0,0,0,0.05);--sidebar-count-text:#94a3b8;
+  --topbar-bg:var(--surface);--topbar-border:rgba(0,0,0,0.06);--text:#1e293b;--text-secondary:#475569;--text-muted:#94a3b8;
+  --col-bg:rgba(0,0,0,0.03);--col-header:#475569;
+  --card-bg:#fff;--card-shadow:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.02);--card-hover-shadow:0 4px 12px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04);--card-title:#1e293b;--card-border:3px solid transparent;
+  --tag-module-bg:rgba(79,110,247,0.1);--tag-module-text:#4f6ef7;--tag-plan-bg:rgba(0,0,0,0.04);--tag-plan-text:#888;
+  --overdue-bg:rgba(239,68,68,0.04);--overdue-border:#ef4444;--overdue-tag-bg:rgba(239,68,68,0.08);--overdue-tag-text:#dc2626;
+  --late-bg:rgba(245,158,11,0.04);--late-border:#f59e0b;--late-tag-bg:rgba(245,158,11,0.08);--late-tag-text:#d97706;
+  --ontime-bg:rgba(16,185,129,0.04);--ontime-border:#10b981;--ontime-tag-bg:rgba(16,185,129,0.1);--ontime-tag-text:#059669;
+  --done-text:#94a3b8;--done-bg:#10b981;--done-border:#10b981;
+  --add-btn-border:#d0d5dd;--add-btn-text:#94a3b8;--add-btn-hover-border:#4f6ef7;--add-btn-hover-bg:transparent;
+  --ep-bg:#fff;--ep-border:rgba(0,0,0,0.06);--ep-preview-text:#475569;--ep-controls-border:rgba(0,0,0,0.03);
+  --input-bg:#fff;--input-border:#d0d5dd;--input-text:#1e293b;--input-radius:8px;
+  --modal-overlay:rgba(0,0,0,0.3);--modal-bg:rgba(255,255,255,0.85);
+  --btn-cancel-bg:#f1f5f9;--btn-cancel-text:#64748b;
+  --primary:#4f6ef7;--primary-hover:#3b5de7;--primary-gradient:linear-gradient(135deg,#6366f1,#4f6ef7);--success:#10b981;--success-hover:#059669;--warn:#f59e0b;
+  --danger-bg:rgba(239,68,68,0.06);--danger-text:#dc2626;
+  --ghost-border:#d0d5dd;
+  --tag-bg:rgba(79,110,247,0.1);--tag-text:#4f6ef7;--tag-remove:#64748b;
+  --info-overdue-bg:rgba(239,68,68,0.06);--info-overdue-text:#dc2626;--info-late-bg:rgba(245,158,11,0.08);--info-late-text:#d97706;--info-ontime-bg:rgba(16,185,129,0.08);--info-ontime-text:#059669;
+  --ep-inner-bg:#f8fafc;--ep-inner-border:rgba(0,0,0,0.06);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.04);--shadow-md:0 4px 12px rgba(0,0,0,0.06);--shadow-lg:0 8px 24px rgba(0,0,0,0.08);
+  --bg-pattern:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='dot' x='0' y='0' width='20' height='20' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='2' cy='2' r='0.8' fill='rgba(0,0,0,0.025)'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23dot)'/%3E%3C/svg%3E");
+}
+
+/* ====== 暗色主题 ====== */
+body.dark{
+  color-scheme:dark;
+  --bg:#0b1120;--surface:#1e293b;--sidebar-bg:rgba(30,41,59,0.85);--sidebar-text:#cbd5e1;--sidebar-hover:rgba(96,165,250,0.06);--sidebar-active:rgba(59,130,246,0.12);--sidebar-active-text:#60a5fa;--sidebar-border:rgba(255,255,255,0.06);--sidebar-count-bg:rgba(255,255,255,0.06);--sidebar-count-text:#64748b;
+  --topbar-bg:rgba(30,41,59,0.9);--topbar-border:rgba(255,255,255,0.06);--text:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;
+  --done-text:#e2e8f0;
+  --col-bg:rgba(255,255,255,0.03);--col-header:#cbd5e1;
+  --card-bg:#1e293b;--card-shadow:0 1px 3px rgba(0,0,0,0.2),0 1px 2px rgba(0,0,0,0.1);--card-hover-shadow:0 4px 14px rgba(0,0,0,0.3),0 2px 4px rgba(0,0,0,0.15);--card-title:#e2e8f0;
+  --add-btn-border:#475569;--add-btn-text:#64748b;--add-btn-hover-border:#60a5fa;
+  --tag-module-bg:rgba(96,165,250,0.12);--tag-module-text:#60a5fa;--tag-plan-bg:rgba(255,255,255,0.05);--tag-plan-text:#cbd5e1;
+  --overdue-bg:rgba(239,68,68,0.06);--overdue-border:#ef4444;--overdue-tag-bg:rgba(239,68,68,0.12);--overdue-tag-text:#fca5a5;
+  --late-bg:rgba(245,158,11,0.06);--late-border:#f59e0b;--late-tag-bg:rgba(245,158,11,0.12);--late-tag-text:#fcd34d;
+  --ontime-bg:rgba(16,185,129,0.06);--ontime-border:#10b981;--ontime-tag-bg:rgba(16,185,129,0.12);--ontime-tag-text:#6ee7b7;
+  --ep-bg:#1e293b;--ep-border:rgba(255,255,255,0.06);--ep-preview-text:#cbd5e1;--ep-controls-border:rgba(255,255,255,0.04);
+  --input-bg:#0f172a;--input-border:#475569;--input-text:#e2e8f0;
+  --modal-overlay:rgba(0,0,0,0.5);--modal-bg:rgba(30,41,59,0.9);
+  --btn-cancel-bg:rgba(255,255,255,0.06);--btn-cancel-text:#94a3b8;
+  --primary:#3b82f6;--primary-hover:#2563eb;--primary-gradient:linear-gradient(135deg,#60a5fa,#3b82f6);
+  --danger-bg:rgba(239,68,68,0.1);--danger-text:#fca5a5;
+  --ghost-border:#475569;
+  --tag-bg:rgba(96,165,250,0.12);--tag-text:#60a5fa;--tag-remove:#94a3b8;
+  --info-overdue-bg:rgba(239,68,68,0.1);--info-overdue-text:#fca5a5;--info-late-bg:rgba(245,158,11,0.1);--info-late-text:#fcd34d;--info-ontime-bg:rgba(16,185,129,0.1);--info-ontime-text:#6ee7b7;
+  --ep-inner-bg:rgba(0,0,0,0.2);--ep-inner-border:rgba(255,255,255,0.06);
+  --bg-pattern:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='dot' x='0' y='0' width='20' height='20' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='2' cy='2' r='0.8' fill='rgba(255,255,255,0.02)'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23dot)'/%3E%3C/svg%3E");
+}
+
+body.dark .completed-at-text{color:#94a3b8}
+body.dark .card.done .card-title{color:#e2e8f0}
+body.dark .card-note{color:#e2e8f0!important}
+
+/* ====== 滚动条 ====== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.12);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.2)}
+body.dark ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1)}
+body.dark ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.18)}
+
+body{background:var(--bg);background-image:var(--bg-pattern)}
+.sidebar{width:220px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid var(--sidebar-border);transition:background .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--sidebar-border)}
+.sidebar-header h2{font-size:16px;display:flex;align-items:center;gap:8px;color:var(--text);letter-spacing:-0.01em}
+.project-list{flex:1;overflow-y:auto;padding:8px 0}
+.project-item{display:flex;align-items:center;padding:10px 16px;cursor:pointer;font-size:13px;gap:10px;color:var(--text-secondary);transition:all .15s;border:none;background:none;width:100%;text-align:left;border-radius:0;position:relative}
+.project-item:hover{background:var(--sidebar-hover);color:var(--text)}
+.project-item.active{background:var(--sidebar-active);color:var(--sidebar-active-text);font-weight:600}
+.project-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--sidebar-active-text);border-radius:0 3px 3px 0}
+.project-item .color-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:transform .15s}
+.project-item:hover .color-dot{transform:scale(1.25)}
+.project-item .task-count{margin-left:auto;font-size:11px;color:var(--sidebar-count-text);background:var(--sidebar-count-bg);padding:0 8px;border-radius:10px;line-height:1.8}
+.sidebar-footer{padding:12px;border-top:1px solid var(--sidebar-border)}
+.new-project-btn{width:100%;padding:10px;border:1px dashed var(--add-btn-border);background:transparent;color:var(--add-btn-text);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;transition:all .2s}
+.new-project-btn:hover{border-color:var(--add-btn-hover-border);color:var(--sidebar-active-text);background:var(--sidebar-active)}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:12px 20px;background:var(--topbar-bg);border-bottom:1px solid var(--topbar-border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;flex-shrink:0;transition:background .3s,border .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.topbar h1{font-size:17px;display:flex;align-items:center;gap:8px;color:var(--text);letter-spacing:-0.01em}
+.topbar-actions{display:flex;gap:6px;align-items:center}
+.topbar-actions select,.topbar-actions button{padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--ghost-border);background:var(--input-bg);color:var(--input-text);font-size:12px;cursor:pointer;transition:all .2s}
+.topbar-actions select:hover,.topbar-actions button:hover{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.btn-primary{background:var(--primary-gradient);color:#fff;border:none!important;font-weight:500}
+.btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 2px 8px rgba(79,110,247,0.3)}
+.btn-success{background:var(--success);color:#fff;border:none!important;font-weight:500}
+.btn-success:hover{background:var(--success-hover);transform:translateY(-1px);box-shadow:0 2px 8px rgba(16,185,129,0.3)}
+.btn-ghost{background:transparent;border:1px solid var(--ghost-border);color:var(--text-secondary)}
+.btn-ghost:hover{background:var(--sidebar-hover);border-color:var(--primary);color:var(--text)}
+.btn-warn{background:var(--warn);color:#fff;border:none!important}
+.btn-warn:hover{transform:translateY(-1px)}
+.week-nav{display:flex;align-items:center;gap:6px}
+.week-nav button{background:none;border:none;cursor:pointer;font-size:14px;padding:3px 6px;border-radius:var(--radius-sm);color:var(--text-secondary)}
+.week-nav button:hover{background:var(--sidebar-hover)}
+.week-nav span{font-size:13px;font-weight:500;min-width:120px;text-align:center;color:var(--text)}
+
+.content{flex:1;display:flex;overflow:hidden}
+.board{flex:1;overflow-x:hidden;overflow-y:auto;padding:14px 14px;display:flex;gap:10px}
+.column{background:var(--col-bg);border-radius:var(--radius-md);min-width:100px;flex:1 1 0;display:flex;flex-direction:column;max-height:100%;width:0;transition:background .3s}
+.column-header{padding:10px 12px 6px;font-size:12px;font-weight:600;color:var(--col-header);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;letter-spacing:0.02em}
+.column-header .count{background:rgba(0,0,0,0.06);padding:0 7px;border-radius:8px;font-size:11px;line-height:1.8}
+body.dark .column-header .count{background:rgba(255,255,255,0.06)}
+.column-body{padding:0 8px 8px;overflow-y:auto;flex:1;min-height:50px;scrollbar-width:none;-ms-overflow-style:none;display:flex;flex-direction:column}
+.column-body::-webkit-scrollbar{display:none}
+
+.card{background:var(--card-bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;box-shadow:var(--card-shadow);cursor:grab;transition:all .2s ease;position:relative;border-left:var(--card-border)}
+.card:hover{box-shadow:var(--card-hover-shadow);transform:translateY(-1px)}
+.card.overdue{border-left-color:var(--overdue-border);background:var(--overdue-bg)}
+.card.late{border-left-color:var(--late-border);background:var(--late-bg)}
+.card.ontime{border-left-color:var(--ontime-border);background:var(--ontime-bg)}
+.card.done .card-title{text-decoration:line-through;color:var(--done-text);opacity:0.7}
+.card.dragging{opacity:0.4;transform:scale(0.95)}
+.card.drag-before{border-top:3px solid var(--primary)!important;margin-top:-1px}
+.card.drag-after{border-bottom:3px solid var(--primary)!important;margin-bottom:-1px}
+body.dark .card.drag-before,body.dark .card.drag-after{border-color:#60a5fa!important}
+
+.card-title{font-size:12px;font-weight:600;margin-bottom:5px;line-height:1.45;cursor:pointer;color:var(--card-title)}
+.card-title:hover{color:var(--sidebar-active-text)}
+.card-tags,.card-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.card-tag{font-size:10px;padding:1px 6px;border-radius:4px;white-space:nowrap;line-height:1.7}
+.card-tag.module{background:var(--tag-module-bg);color:var(--tag-module-text)}
+.card-tag.overdue{background:var(--overdue-tag-bg);color:var(--overdue-tag-text);font-weight:500}
+.card-tag.late{background:var(--late-tag-bg);color:var(--late-tag-text);font-weight:500}
+.card-tag.ontime{background:var(--ontime-tag-bg);color:var(--ontime-tag-text);font-weight:500}
+.card-tag.plan{background:var(--tag-plan-bg);color:var(--tag-plan-text)}
+.card .card-check{position:absolute;top:8px;right:8px;width:15px;height:15px;border-radius:50%;border:2px solid var(--add-btn-border);background:var(--card-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;transition:all .2s}
+.card.done .card-check{background:var(--done-bg);border-color:var(--done-border);color:#fff;box-shadow:0 0 0 3px rgba(16,185,129,0.15)}
+.card .card-check:hover{border-color:var(--done-bg);transform:scale(1.1)}
+.card .delete-btn{position:absolute;top:8px;right:28px;width:14px;height:14px;border-radius:3px;background:transparent;border:none;cursor:pointer;font-size:9px;color:var(--text-muted);display:none;align-items:center;justify-content:center;transition:all .15s}
+.card:hover .delete-btn{display:flex}
+.card .delete-btn:hover{background:var(--danger-bg);color:var(--danger-text)}
+.add-card-btn{display:block;width:100%;padding:6px;border:1px dashed var(--add-btn-border);border-radius:var(--radius-sm);background:transparent;color:var(--add-btn-text);cursor:pointer;font-size:11px;margin-top:4px;transition:all .2s}
+.add-card-btn:hover{border-color:var(--add-btn-hover-border);color:var(--sidebar-active-text);background:var(--sidebar-active)}
+.completed-at-text{font-size:10px;color:var(--text-muted);margin-top:3px}
+
+/* ====== 泳道视图 ====== */
+.swimlane-board{display:grid;gap:6px;padding:8px;flex:1;overflow:auto}
+.swimlane-cell{background:var(--col-bg);border-radius:var(--radius-sm);min-height:60px;padding:6px;display:flex;flex-direction:column;gap:4px;transition:background .2s}
+.swimlane-cell.drop-hover{background:var(--sidebar-active)}
+.swimlane-header-cell{font-size:12px;font-weight:600;color:var(--col-header);padding:6px 4px;display:flex;align-items:center;justify-content:center}
+.swimlane-row-header{font-size:12px;font-weight:500;color:var(--text-secondary);padding:6px 10px;display:flex;align-items:center;min-width:80px;white-space:nowrap}
+.swimlane-card{background:var(--card-bg);border-radius:var(--radius-sm);padding:6px 8px;box-shadow:var(--card-shadow);font-size:11px;line-height:1.35;cursor:grab;border-left:3px solid transparent;transition:all .15s}
+.swimlane-card:hover{box-shadow:var(--card-hover-shadow);transform:translateY(-1px)}
+.swimlane-card.overdue{border-left-color:var(--overdue-border)}
+.swimlane-card.late{border-left-color:var(--late-border)}
+.swimlane-card.ontime{border-left-color:var(--ontime-border)}
+.swimlane-card.done .card-title{text-decoration:line-through;color:var(--done-text);opacity:0.7}
+.swimlane-card-title{font-weight:600;color:var(--card-title);margin-bottom:2px;cursor:pointer;font-size:12px}
+.swimlane-card-title:hover{color:var(--sidebar-active-text)}
+.swimlane-pri-tag{font-size:9px;padding:0 4px;border-radius:2px;display:inline-block;line-height:1.6}
+body.dark .swimlane-board{background:transparent}
+
+/* ====== 导出面板 ====== */
+.export-panel{width:340px;background:var(--ep-bg);border-left:1px solid var(--ep-border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .3s,background .3s,border .3s}
+.export-panel-header{padding:10px 12px;border-bottom:1px solid var(--ep-border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;cursor:pointer}
+.export-panel-header h3{font-size:13px;display:flex;align-items:center;gap:4px;color:var(--text)}
+.export-panel-controls{padding:8px 12px;border-bottom:1px solid var(--ep-controls-border);flex-shrink:0}
+.ep-row{display:flex;gap:4px;margin-bottom:6px;align-items:center}
+.ep-row input[type="date"],.ep-row input[type="text"]{flex:1;padding:4px 6px;border:1px solid var(--input-border);border-radius:4px;font-size:11px;min-width:0;background:var(--input-bg);color:var(--input-text)}
+.ep-row label{font-size:11px;color:var(--text-muted);white-space:nowrap}
+.ep-btn{padding:4px 10px;border-radius:4px;border:1px solid var(--ghost-border);font-size:11px;cursor:pointer;text-align:center;background:var(--input-bg);color:var(--input-text);transition:all .15s}
+.ep-btn.primary{background:var(--primary-gradient);color:#fff;border:none}
+.ep-btn.primary:hover{background:var(--primary-hover)}
+.ep-btn.success{background:var(--success);color:#fff;border:none}
+.ep-btn.success:hover{background:var(--success-hover)}
+.ep-btn.ghost{background:transparent;font-size:10px;color:var(--text-muted);border:none}
+.ep-btn.ghost:hover{background:var(--sidebar-hover);color:var(--text)}
+.export-body{flex:1;overflow-y:auto;padding:10px 12px}
+.export-body .ep-preview{font-size:11px;white-space:pre-wrap;line-height:1.5;color:var(--ep-preview-text);font-family:SFMono-Regular,Menlo,monospace}
+.export-body .ep-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0}
+.export-panel.collapsed .export-body,.export-panel.collapsed .export-panel-controls{display:none}
+.export-panel.collapsed{width:30px}
+.export-panel.collapsed .export-panel-header{padding:10px 6px;writing-mode:vertical-rl;text-orientation:mixed;cursor:pointer}
+.export-panel.collapsed .export-panel-header h3{color:var(--text-muted)}
+.export-panel.collapsed .toggle-out{display:none}
+.export-panel:not(.collapsed) .toggle-in{display:none}
+
+/* ====== 模态框 ====== */
+.modal{display:none;position:fixed;inset:0;background:var(--modal-overlay);align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal.show{display:flex;animation:modalFadeIn .2s ease-out}
+@keyframes modalFadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.modal-content{background:var(--modal-bg);border-radius:var(--radius-lg);padding:24px;width:650px;max-width:90vw;max-height:90vh;overflow-y:auto;transition:background .3s;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow-lg);border:1px solid var(--sidebar-border)}
+.modal-content h3{font-size:16px;margin-bottom:16px;color:var(--text);font-weight:600}
+.modal-preview{background:var(--ep-inner-bg);border-radius:var(--radius-sm);padding:14px;font-size:12px;white-space:pre-wrap;line-height:1.5;max-height:380px;overflow-y:auto;font-family:SFMono-Regular,Menlo,monospace;color:var(--ep-preview-text);border:1px solid var(--ep-inner-border)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.modal-actions button{padding:8px 18px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;transition:all .15s}
+.btn-cancel{background:var(--btn-cancel-bg);color:var(--btn-cancel-text)}
+.btn-cancel:hover{background:var(--sidebar-hover)}
+.btn-danger{background:var(--danger-bg);color:var(--danger-text)}
+.btn-danger:hover{opacity:0.85;transform:translateY(-1px)}
+
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;font-weight:500;letter-spacing:0.01em}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:1px solid var(--input-border);border-radius:var(--input-radius);font-size:13px;background:var(--input-bg);color:var(--input-text);transition:all .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,110,247,0.1)}
+.form-group textarea{resize:vertical;min-height:50px}
+.form-group .row2{display:flex;gap:8px}
+.form-group .row2>*{flex:1}
+.form-group .tag-input-wrap{display:flex;gap:6px;align-items:center}
+.form-group .tag-input-wrap input{flex:1}
+.form-group .tag-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.form-group .tag-item{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--tag-bg);color:var(--tag-text);display:flex;align-items:center;gap:4px}
+.form-group .tag-item .remove{cursor:pointer;font-size:12px;opacity:0.6;color:var(--tag-remove)}
+.form-group .tag-item .remove:hover{opacity:1}
+.form-group .checkbox-wrap{display:flex;align-items:center;gap:8px;margin-top:4px}
+.form-group .checkbox-wrap input[type="checkbox"]{width:auto;accent-color:var(--done-bg)}
+.color-options{display:flex;gap:6px;margin-top:6px}
+.color-opt{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.color-opt:hover{transform:scale(1.15)}
+.color-opt.selected{border-color:var(--text);box-shadow:0 0 0 2px var(--card-bg),0 0 0 4px var(--primary)}
+.info-badge{padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;margin-bottom:12px}
+.info-badge.overdue{background:var(--info-overdue-bg);color:var(--info-overdue-text)}
+.info-badge.late{background:var(--info-late-bg);color:var(--info-late-text)}
+.info-badge.ontime{background:var(--info-ontime-bg);color:var(--info-ontime-text)}
+select option{background:var(--card-bg);color:var(--text)}
+
+/* ====== Toast 通知 ====== */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;pointer-events:none;transition:all .35s cubic-bezier(0.34,1.56,0.64,1);opacity:0;box-shadow:var(--shadow-md);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ====== 响应式：平板 & 手机 ====== */
+
+/* 手机端菜单按钮（默认隐藏） */
+.mobile-menu-btn{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text);padding:4px 8px;border-radius:var(--radius-sm)}
+
+@media (max-width: 768px){
+  /* 布局切换：纵向排列 */
+  body{flex-direction:column;overflow:auto}
+
+  /* 侧边栏 → 底部导航 */
+  .sidebar{width:100%;flex-direction:row;align-items:center;padding:0 8px;border-right:none;border-top:1px solid var(--sidebar-border);order:1;flex-shrink:0;overflow-x:auto;gap:2px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .sidebar-header{display:none}
+  .project-list{flex:none;display:flex;overflow-x:auto;padding:6px 0;gap:4px;width:auto}
+  .project-item{white-space:nowrap;padding:8px 10px;font-size:12px;border-radius:var(--radius-sm);width:auto;flex-shrink:0}
+  .project-item.active::before{display:none}
+  .sidebar-footer{display:none}
+
+  /* 主区域 */
+  .main{flex:1;order:0;overflow:auto}
+
+  /* 顶部栏：紧凑 */
+  .topbar{padding:8px 10px;flex-wrap:wrap;gap:4px}
+  .topbar h1{font-size:15px}
+  .topbar-actions{overflow-x:auto;display:flex;gap:4px;padding-bottom:4px;width:100%}
+  .topbar-actions .btn-ghost{font-size:10px!important;padding:3px 5px!important;white-space:nowrap}
+  .week-nav span{min-width:80px;font-size:12px}
+
+  /* 看板列：水平滚动 */
+  .board{overflow-x:auto;padding:8px;gap:8px;flex:1}
+  .column{min-width:260px;flex:none;max-height:none;width:260px}
+  .column-header{padding:8px 10px;font-size:11px}
+  .col-tasks{min-height:80px}
+
+  /* 泳道：横竖都滚 */
+  .swimlane-board{font-size:11px;overflow:auto}
+  .swimlane-cell{min-height:40px;padding:4px}
+
+  /* 卡片 */
+  .card{padding:8px 10px;font-size:12px}
+  .card-title{font-size:12px}
+  .card-tags{gap:3px}
+  .card-tag{font-size:9px;padding:1px 4px}
+
+  /* 导出面板 → 全宽 */
+  .content{flex-direction:column}
+  .export-panel{width:100%!important;border-left:none;border-top:1px solid var(--ep-border);max-height:200px}
+  .export-panel.collapsed{max-height:36px;width:100%!important;overflow:hidden}
+  .export-panel:not(.collapsed){max-height:40vh}
+  .export-body{overflow-y:auto}
+
+  /* 弹窗 → 全屏 */
+  .modal-content{width:95vw;max-height:95vh;padding:16px}
+
+  /* 隐藏的一些元素 */
+  #weekLabel{margin:0 2px}
+
+  /* Toast 位置 */
+  #toast{bottom:60px;font-size:12px;padding:6px 14px}
+}
+
+/* 超小屏 */
+@media (max-width: 480px){
+  .topbar h1{font-size:13px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .column{min-width:220px;width:220px}
+  .week-nav button{padding:3px 4px;font-size:12px}
+  .topbar-actions .btn-ghost{font-size:9px!important;padding:2px 4px!important}
+  .project-item{padding:6px 8px;font-size:11px}
+}
+
+/* 平板：中等宽度 */
+@media (min-width: 769px) and (max-width: 1024px){
+  .sidebar{width:160px}
+  .column{min-width:80px}
+  .topbar{padding:10px 14px}
+  .topbar h1{font-size:16px}
+}
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header"><h2>📋 项目看板</h2></div>
+  <div class="project-list" id="projectList"></div>
+  <div class="sidebar-footer"><button class="new-project-btn" onclick="showProjectModal()">+ 新建项目</button></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <h1 id="projectTitle">🏗️ 选择一个项目</h1>
+      <button class="btn-ghost" style="font-size:11px;padding:3px 8px;" onclick="showProjectModal(true)">✏️</button>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-ghost" id="themeToggle" style="font-size:14px;padding:3px 8px;" onclick="toggleTheme()">🌙</button>
+      <div class="week-nav">
+        <button onclick="prevWeek()">◀</button><span id="weekLabel">本周</span><button onclick="nextWeek()">▶</button>
+        <button class="btn-ghost" onclick="goToday()" style="font-size:11px;">今天</button>
+      </div>
+      <select id="moduleFilter" onchange="renderBoard()" style="min-width:90px;font-size:12px;"><option value="">全部模块</option></select>
+      <select id="priFilter" onchange="renderBoard()" style="min-width:60px;font-size:12px;"><option value="">全部</option><option value="p0">P0</option><option value="p1">P1</option><option value="p2">P2</option><option value="p3">P3</option></select>
+      <button class="btn-ghost" id="viewToggle" style="font-size:11px;color:#0891b2;padding:3px 8px;" onclick="toggleViewMode()">🔀 泳道</button>
+      <button class="btn-ghost" style="font-size:11px;color:#8b5cf6;padding:3px 8px;" onclick="showStats()">📊 统计</button>
+      <button class="btn-ghost" style="font-size:11px;color:#78716c;padding:3px 8px;" onclick="showSearchModal()">🔍 搜索</button>
+      <button class="btn-ghost" style="font-size:11px;color:#a855f7;padding:3px 8px;" onclick="showHistory()">⏳ 历史</button>
+      <button class="btn-ghost" style="font-size:11px;color:#0ea5e9;padding:3px 8px;" onclick="showWebDAVConfig()">☁️ 同步</button>
+      <button class="btn-ghost" style="font-size:11px;color:#059669;padding:3px 8px;" onclick="exportImage()">📸 截图</button>
+      <button class="btn-ghost" style="font-size:11px;color:#ef4444;padding:3px 8px;" onclick="resetCurrentProject()">🗑️ 清空</button>
+      <button class="btn-ghost" style="font-size:11px;color:#4f6ef7;padding:3px 8px;" onclick="loadDemoProject()">📖 演示</button>
+      <button class="btn-ghost" style="font-size:11px;color:#10b981;padding:3px 8px;" onclick="backupData()">💾 备份</button>
+      <button class="btn-ghost" style="font-size:11px;color:#8b5cf6;padding:3px 8px;" onclick="document.getElementById('restoreInput').click()">📂 恢复</button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="board" id="board"></div>
+
+    <!-- ====== 导出面板（默认折叠） ====== -->
+    <div class="export-panel collapsed" id="exportPanel">
+      <div class="export-panel-header" onclick="toggleExportPanel()">
+        <h3 class="toggle-in" style="font-size:13px;display:flex;align-items:center;gap:4px">▶ 导出</h3>
+        <h3 class="toggle-out" style="font-size:13px;display:flex;align-items:center;gap:4px;margin:0">
+          <span>📄 周报</span><span style="font-size:11px">◀</span>
+        </h3>
+      </div>
+      <div class="export-panel-controls">
+        <div class="ep-row">
+          <label>从</label><input type="date" id="epStart" onchange="epDirty()">
+          <label>至</label><input type="date" id="epEnd" onchange="epDirty()">
+        </div>
+        <div class="ep-row">
+          <label>✏️ 关键词</label>
+          <input type="text" id="epKeywords" placeholder="如：服务器、安全、下周计划…" oninput="epDirty()">
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="ep-btn primary" onclick="generateReport()">🤖 智能生成</button>
+          <button class="ep-btn ghost" onclick="copyPrompt()" title="复制完整 Prompt 到大模型使用">📋 Prompt</button>
+          <button class="ep-btn success" onclick="confirmExport()">💾 导出</button>
+        </div>
+      </div>
+      <div class="export-body" id="exportBody">
+        <div id="epPreview" class="ep-empty">📅 选日期 → 点"智能生成"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 导出确认模态 -->
+<div class="modal" id="exportConfirmModal"><div class="modal-content">
+  <h3>📄 确认导出（Obsidian 格式）</h3>
+  <div class="modal-preview" id="exportConfirmPreview"></div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="hideModal('exportConfirmModal')">取消</button>
+    <button class="btn-primary" onclick="doExportMd()">✅ 确认导出 .md</button>
+  </div>
+</div></div>
+
+<!-- 项目模态 -->
+<div class="modal" id="projectModal"><div class="modal-content">
+  <h3 id="projectModalTitle">📁 新建项目</h3>
+  <div class="form-group"><label>项目名称</label><input id="projName" placeholder="例如：某系统运维"></div>
+  <div class="form-group"><label>项目颜色</label><div class="color-options" id="colorOptions"></div></div>
+  <div class="form-group">
+    <label>模块（可自行增减）</label>
+    <div class="tag-input-wrap">
+      <input id="projModuleInput" placeholder="输入模块名回车添加" onkeydown="if(event.key==='Enter'){addProjModule();event.preventDefault()}">
+      <button class="btn-primary" onclick="addProjModule()" style="padding:6px 12px;font-size:12px;">+</button>
+    </div>
+    <div class="tag-list" id="projModuleList"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="hideModal('projectModal')">取消</button>
+    <button class="btn-danger" id="deleteProjBtn" style="display:none;" onclick="deleteProject()">删除项目</button>
+    <button class="btn-primary" onclick="saveProject()">保存</button>
+  </div>
+</div></div>
+
+<!-- 任务模态 -->
+<div class="modal" id="taskModal"><div class="modal-content">
+  <h3 id="taskModalTitle">📝 任务</h3>
+  <div class="form-group"><label>任务内容</label><input id="taskContent" placeholder="描述任务"></div>
+  <div class="form-group">
+    <div class="row2">
+      <div><label>所属模块</label><select id="taskModule"></select></div>
+      <div><label>优先级</label><select id="taskPriority"></select></div>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="row2">
+      <div><label>计划完成时间</label><input type="date" id="taskPlanned"></div>
+      <div><label>实际完成时间</label><input type="datetime-local" id="taskCompletedAt"></div>
+    </div>
+  </div>
+  <div class="form-group"><label>备注</label><textarea id="taskNote" placeholder="可选的备注信息"></textarea></div>
+  <div class="form-group">
+    <div class="checkbox-wrap">
+      <input type="checkbox" id="taskDone" onchange="syncCompletedTime()"><label for="taskDone" style="margin:0;cursor:pointer;color:var(--text)">✅ 标记为已完成（划线）</label>
+    </div>
+  </div>
+  <div id="taskStatusBadge"></div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="hideModal('taskModal')">取消</button>
+    <button class="btn-danger" id="deleteTaskBtn" style="display:none;" onclick="deleteTask()">删除</button>
+    <button class="btn-primary" onclick="saveTask()">保存</button>
+  </div>
+</div></div>
+
+<!-- 统计面板模态 -->
+<div class="modal" id="statsModal"><div class="modal-content" style="width:520px">
+  <h3 style="margin-bottom:12px;font-size:15px;color:var(--text)">📊 本周统计</h3>
+  <div id="statsContent"></div>
+  <div class="modal-actions"><button class="btn-cancel" onclick="hideModal('statsModal')">关闭</button></div>
+</div></div>
+<div class="modal" id="searchModal"><div class="modal-content" style="width:520px;max-height:80vh;display:flex;flex-direction:column">
+  <h3 style="margin-bottom:10px;font-size:15px;color:var(--text)">🔍 全局搜索</h3>
+  <input id="searchInput" type="text" placeholder="搜索任务内容、备注、模块…" style="width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--input-text);font-size:13px;outline:none;margin-bottom:4px" oninput="performSearch(this.value)" onkeydown="if(event.key==='Enter'&&this.value.trim()){saveSearchHistory(this.value.trim());renderSearchHistory()}" autofocus>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">实时搜索 · ⏎ 回车保存搜索记录</div>
+  <div id="searchHistory" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:0"></div>
+  <div id="searchResults" style="flex:1;overflow-y:auto;min-height:60px;font-size:13px;color:var(--text-secondary)"></div>
+  <div class="modal-actions" style="margin-top:8px"><button class="btn-cancel" onclick="hideModal('searchModal')">关闭</button></div>
+</div></div>
+
+<script>
+const COLORS=["#4f6ef7","#f59e0b","#10b981","#ef4444","#8b5cf6","#ec4899","#06b6d4","#f97316"];
+const WEEKDAYS=["周日","周一","周二","周三","周四","周五","周六"];
+function dayLabel(d){return WEEKDAYS[d.getDay()]}
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtDisplay(d){return (d.getMonth()+1)+'/'+d.getDate()}
+function getWeekStart(d){d=new Date(d);const day=d.getDay();d.setDate(d.getDate()-(day===0?6:day-1));d.setHours(0,0,0,0);return d}
+function getWeekDates(s){const r=[];for(let i=0;i<7;i++){const d=new Date(s);d.setDate(s.getDate()+i);r.push(d)}return r}
+function isToday(d){const t=new Date();return d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth()&&d.getDate()===t.getDate()}
+function genId(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)}
+function nowStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function fmtCompleted(dtStr){if(!dtStr)return '';const d=new Date(dtStr);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+const PRIORITIES={p0:{label:'P0',color:'#ef4444',bg:'#fef2f2'},p1:{label:'P1',color:'#f59e0b',bg:'#fffbeb'},p2:{label:'P2',color:'#3b82f6',bg:'#eff6ff'},p3:{label:'P3',color:'#94a3b8',bg:'#f8fafc'}};
+function priorityCss(){let s='';Object.entries(PRIORITIES).forEach(([k,v])=>{s+='.card-tag.pri-'+k+'{background:'+v.bg+';color:'+v.color+';font-weight:500}'});return s+'.dark .card-tag.pri-p0{background:#3b1a1a;color:#fca5a5}.dark .card-tag.pri-p1{background:#3b2d14;color:#fcd34d}.dark .card-tag.pri-p2{background:#1e3a5f;color:#93c5fd}.dark .card-tag.pri-p3{background:#334155;color:#94a3b8}'}
+document.head.insertAdjacentHTML('beforeend','<style>'+priorityCss()+'</style>')
+
+let data=loadData(),currentProjId=data.currentProjId||null,currentWeekStart=getWeekStart(new Date()),editingTaskId=null,editingProjModules=[],lastReport=null,viewMode="week";
+
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+  localStorage.setItem("kanban_theme",document.body.classList.contains("dark")?"dark":"light");
+  document.getElementById("themeToggle").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
+}
+function initTheme(){
+  const t=localStorage.getItem("kanban_theme");
+  if(t==="dark"){document.body.classList.add("dark");document.getElementById("themeToggle").textContent="☀️"}
+}
+
+// ====== 数据 ======
+function getDefaultData(){return{
+  currentProjId:"demo_sysops",
+  projects:{"demo_sysops":{id:"demo_sysops",name:"某系统运维周报",color:"#4f6ef7",
+    modules:["系统监控","服务器维护","数据库运维","安全巡检","故障处理","文档更新"],
+    tasks:{
+      "2026-05-25":[{id:"t1",content:"服务器CPU使用率异常排查",module:"系统监控",note:"某节点持续90%+已处理",plannedDate:"2026-05-25",completedAt:"2026-05-25T15:30:00",done:true},{id:"t2",content:"Nginx配置备份",module:"服务器维护",note:"",plannedDate:"2026-05-25",completedAt:"2026-05-25T11:00:00",done:true},{id:"t3",content:"MySQL慢查询日志分析",module:"数据库运维",note:"优化了3条SQL",plannedDate:"2026-05-26",completedAt:"2026-05-25T17:45:00",done:true}],
+      "2026-05-26":[{id:"t4",content:"SSL证书到期检查（7个域名）",module:"安全巡检",note:"1个即将到期已续签",plannedDate:"2026-05-26",completedAt:"2026-05-26T10:20:00",done:true},{id:"t5",content:"日志磁盘空间清理",module:"服务器维护",note:"释放120GB",plannedDate:"2026-05-26",completedAt:"2026-05-26T14:00:00",done:true},{id:"t6",content:"接口响应超时502问题定位",module:"故障处理",note:"网关超时配置调整中",plannedDate:"2026-05-27",completedAt:"",done:false}],
+      "2026-05-27":[{id:"t7",content:"数据库主从同步延迟检查",module:"数据库运维",note:"延迟2s正常",plannedDate:"2026-05-27",completedAt:"2026-05-27T09:15:00",done:true},{id:"t8",content:"防火墙规则审计",module:"安全巡检",note:"已封禁3个异常IP",plannedDate:"2026-05-27",completedAt:"2026-05-27T11:30:00",done:true},{id:"t9",content:"运维操作手册更新v3.2",module:"文档更新",note:"补充了灾备切换步骤",plannedDate:"2026-05-29",completedAt:"2026-05-27T16:00:00",done:true},{id:"t10",content:"ELK日志平台索引优化",module:"系统监控",note:"需与开发确认保留策略",plannedDate:"2026-05-28",completedAt:"",done:false}],
+      "2026-05-28":[{id:"t11",content:"凌晨2:00数据库全量备份验证",module:"数据库运维",note:"备份文件3.2TB校验通过",plannedDate:"2026-05-28",completedAt:"2026-05-28T03:30:00",done:true},{id:"t12",content:"用户反馈页面加载慢排查",module:"故障处理",note:"CDN预热+静态资源压缩",plannedDate:"2026-05-28",completedAt:"",done:false},{id:"t13",content:"Docker镜像仓库清理",module:"服务器维护",note:"清理过期镜像释放80GB",plannedDate:"2026-05-28",completedAt:"",done:false}],
+      "2026-05-29":[{id:"t14",content:"安全漏洞扫描（本周第三轮）",module:"安全巡检",note:"高危0个,中危2个已派单",plannedDate:"2026-05-29",completedAt:"2026-05-29T10:00:00",done:true},{id:"t15",content:"服务器内核安全更新",module:"服务器维护",note:"计划停机窗口22:00-23:00",plannedDate:"2026-05-29",completedAt:"",done:false},{id:"t16",content:"周报编写",module:"文档更新",note:"待完成",plannedDate:"2026-05-29",completedAt:"",done:false}]
+  }}}
+}}
+
+function loadData(){try{const d=localStorage.getItem("kanban_data");if(d){const p=JSON.parse(d);Object.values(p.projects).forEach(p=>{if(!p.tasks)p.tasks={};Object.values(p.tasks).forEach(a=>a.forEach(t=>{if(t.done===undefined)t.done=false;if(t.plannedDate===undefined)t.plannedDate="";if(t.completedAt===undefined)t.completedAt="";if(t.priority===undefined)t.priority="p2"}))});return p}}catch(e){}return getDefaultData()}
+function saveData(action, skipSync){
+  localStorage.setItem("kanban_data",JSON.stringify(data));
+  // Git式版本管理：自动保存快照
+  let hist=[];try{hist=JSON.parse(localStorage.getItem("kanban_history")||"[]")}catch(e){}
+  hist.push({ts:new Date().toISOString(),action:action||"🔄 修改",data:JSON.parse(JSON.stringify(data))});
+  if(hist.length>500)hist=hist.slice(hist.length-500);
+  try{localStorage.setItem("kanban_history",JSON.stringify(hist))}catch(e){}
+  // WebDAV 自动同步（防抖：连续操作只触发最后一次）
+  if(skipSync)return;
+  if(window._syncTimer)clearTimeout(window._syncTimer);
+  window._syncTimer=setTimeout(()=>{
+    window._syncTimer=null;
+    const cfg=getWebDAVConfig();console.log("[WebDAV] 配置:",JSON.stringify({url:cfg.url?.slice(0,20),user:cfg.user,autoSync:cfg.autoSync,useProxy:cfg.useProxy,proxyHost:cfg.proxyHost}));
+  if(cfg.autoSync&&cfg.url&&cfg.user&&cfg.pass){
+    const mode=cfg.useProxy?"代理 → "+cfg.proxyHost:"直连";
+    console.log("[WebDAV] 同步模式:",mode);
+    setTimeout(async()=>{console.log("[WebDAV] 开始同步...");const ok=await saveToWebDAV();console.log("[WebDAV] 同步结果:",ok);if(!ok){const wh=getWebDAVHeaders();showToast("☁️ 同步失败"+(wh?.useProxy?"":"（CORS？）"),"#ef4444")}else showToast("☁️ 已同步","#10b981")},100);
+  }
+  },5000);
+}
+
+function taskStatus(t){
+  if(!t.plannedDate)return null;
+  const plan=new Date(t.plannedDate);plan.setHours(23,59,59,0);
+  if(t.done&&t.completedAt){const act=new Date(t.completedAt);return act<=plan?'ontime':'late'}
+  if(!t.done){const now=new Date();return now>plan?'overdue':null}
+  return null;
+}
+function statusText(s){return s==='overdue'?'❗逾期':s==='late'?'⚠️延期':s==='ontime'?'✅按期':''}
+
+function renderSidebar(){
+  const el=document.getElementById("projectList");el.innerHTML="";
+  const e=Object.entries(data.projects);
+  if(!e.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">暂无项目<br>点击下方新建</div>';return}
+  e.forEach(([id,p])=>{
+    const c=Object.values(p.tasks||{}).reduce((s,a)=>s+a.length,0);
+    const d=Object.values(p.tasks||{}).reduce((s,a)=>s+a.filter(t=>t.done).length,0);
+    const div=document.createElement("div");
+    div.className="project-item"+(id===currentProjId?" active":"");
+    div.innerHTML='<span class="color-dot" style="background:'+p.color+'"></span>'+p.name+'<span class="task-count">'+d+'/'+c+'</span>';
+    div.onclick=()=>{currentProjId=id;data.currentProjId=id;saveData("🔄 切换: "+p.name);renderAll()};el.appendChild(div);
+  });
+}
+
+function renderBoard(){
+  const p=data.projects[currentProjId];
+  if(!p){document.getElementById("board").innerHTML='<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:15px;">← 点击左侧选择项目</div>';document.getElementById("projectTitle").textContent="🏗️ 选择一个项目";document.getElementById("board").className="board";return}
+  if(viewMode==="swimlane"){document.getElementById("board").className="swimlane-board";renderSwimlaneView();return}
+  document.getElementById("board").className="board";
+  document.getElementById("projectTitle").textContent="🏗️ "+p.name;
+  const dates=getWeekDates(currentWeekStart);
+  document.getElementById("weekLabel").textContent=dates[0].getMonth()===dates[6].getMonth()?(dates[0].getMonth()+1)+'月'+dates[0].getDate()+'日 - '+dates[6].getDate()+'日':fmtDisplay(dates[0])+' - '+fmtDisplay(dates[6]);
+  const filter=document.getElementById("moduleFilter");const cf=filter.value;
+  filter.innerHTML='<option value="">全部模块</option>';p.modules.forEach(m=>filter.innerHTML+='<option value="'+m+'"'+(m===cf?'selected':'')+'>'+m+'</option>');
+  const pf=document.getElementById("priFilter"),pcf=pf.value;
+  const board=document.getElementById("board");board.innerHTML="";const fm=filter.value;
+  const priOrder={p0:0,p1:1,p2:2,p3:3};
+  dates.forEach((date,i)=>{
+    const ds=fmtDate(date);let tasks=(p.tasks[ds]||[]).filter(t=>!fm||t.module===fm);if(pcf)tasks=tasks.filter(t=>t.priority===pcf);
+    const dc=tasks.filter(t=>t.done).length;
+    const col=document.createElement("div");col.className="column";
+    const today=isToday(date);
+    col.innerHTML='<div class="column-header"'+(today?'style="color:#d48806"':'')+'><span>'+dayLabel(date)+' '+fmtDisplay(date)+'</span><span class="count">'+tasks.length+(dc?' · '+dc+'✓':'')+'</span></div><div class="column-body" data-date="'+ds+'">'
+      +tasks.map((t,i)=>{
+        const st=t.plannedDate?taskStatus(t):null;
+        let cc='card';
+        if(st==='overdue')cc+=' overdue';else if(st==='late')cc+=' late';else if(st==='ontime')cc+=' ontime';
+        if(t.done)cc+=' done';
+        const priTag='<span class="card-tag pri-'+(t.priority||'p2')+'">'+((PRIORITIES[t.priority||'p2']||PRIORITIES.p2).label)+'</span>';
+        const tags=priTag+'<span class="card-tag module">'+t.module+'</span>'+(st?'<span class="card-tag '+st+'">'+statusText(st)+'</span>':'')+(t.plannedDate?'<span class="card-tag plan">📅'+t.plannedDate.slice(5)+'</span>':'');
+        return '<div class="'+cc+'" draggable="true" data-id="'+t.id+'"><span class="card-check" onclick="event.stopPropagation();toggleDone(\''+t.id+'\')">'+(t.done?'✓':'')+'</span><button class="delete-btn" onclick="event.stopPropagation();quickDelete(\''+t.id+'\')">✕</button><div class="card-title" onclick="editTask(\''+t.id+'\')">'+t.content+'</div><div class="card-tags">'+tags+'</div>'+(t.note?'<div style="font-size:11px;margin-top:3px;color:var(--text-muted)" class="card-note">'+t.note+'</div>':'')+(t.done&&t.completedAt?'<div class="completed-at-text">🕐'+fmtCompleted(t.completedAt)+'</div>':'')+'</div>';
+      }).join('')+'<button class="add-card-btn" onclick="showTaskModal(\''+ds+'\')">+ 添加</button></div>';
+    const body=col.querySelector(".column-body");
+    body.addEventListener("dragover",function(e){
+      e.preventDefault();const cards=this.querySelectorAll(".card:not(.dragging)");
+      this.querySelectorAll(".drag-before,.drag-after").forEach(c=>c.classList.remove("drag-before","drag-after"));
+      let insertIdx=cards.length;
+      for(let i=0;i<cards.length;i++){const r=cards[i].getBoundingClientRect(),mid=r.top+r.height/2;if(e.clientY<mid){cards[i].classList.add("drag-before");insertIdx=i;break}else if(e.clientY<r.bottom){cards[i].classList.add("drag-after");insertIdx=i+1;break}}
+      this.dataset.insertIdx=insertIdx;
+    });
+    body.addEventListener("dragleave",function(e){if(!this.contains(e.relatedTarget))this.querySelectorAll(".drag-before,.drag-after").forEach(c=>c.classList.remove("drag-before","drag-after"))});
+    body.addEventListener("drop",function(e){
+      e.preventDefault();this.querySelectorAll(".drag-before,.drag-after").forEach(c=>c.classList.remove("drag-before","drag-after"));
+      const id=e.dataTransfer.getData("text/plain");if(!id)return;
+      const td=this.dataset.date,insertIdx=parseInt(this.dataset.insertIdx)||0;
+      let task=null;
+      for(const dk of Object.keys(p.tasks)){const idx=p.tasks[dk].findIndex(t=>t.id===id);if(idx!==-1){task=p.tasks[dk].splice(idx,1)[0];break}}
+      if(!task)return;
+      if(!p.tasks[td])p.tasks[td]=[];
+      p.tasks[td].splice(insertIdx,0,task);
+      saveData("↕️ 移动: "+task.content.slice(0,20));renderBoard();renderSidebar();
+    });
+    col.querySelectorAll(".card").forEach(c=>{c.addEventListener("dragstart",function(e){e.dataTransfer.setData("text/plain",this.dataset.id);c.classList.add("dragging")});c.addEventListener("dragend",function(){c.classList.remove("dragging");document.querySelectorAll(".drag-before,.drag-after").forEach(c=>c.classList.remove("drag-before","drag-after"))})});
+    board.appendChild(col);
+  });
+}
+function toggleViewMode(){viewMode=viewMode==="week"?"swimlane":"week";document.getElementById("viewToggle").textContent=viewMode==="week"?"🔀 泳道":"📅 周视图";renderBoard()}
+function showSwimlaneDetail(ds,module){
+  const p=data.projects[currentProjId];if(!p)return;
+  const tasks=(p.tasks[ds]||[]).filter(t=>t.module===module);
+  const pf=document.getElementById("priFilter").value;const filtered=pf?tasks.filter(t=>t.priority===pf):tasks;
+  const weekDay=new Date(ds);const dayNames=["日","一","二","三","四","五","六"];
+  const overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:var(--modal-overlay);z-index:200;display:flex;align-items:center;justify-content:center";
+  overlay.onclick=function(e){if(e.target===this)document.body.removeChild(overlay)};
+  const box=document.createElement("div");box.style.cssText="background:var(--modal-bg);border-radius:12px;padding:20px 24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)";
+  let h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h+='<span style="font-size:15px;font-weight:600;color:var(--text)">📋 '+module+' · 周'+dayNames[weekDay.getDay()]+' ('+fmtDisplay(weekDay)+')</span>';
+  h+='<button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted)">✕</button></div>';
+  if(!filtered.length){h+='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">暂无任务</div>'}
+  else{h+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">共 '+filtered.length+' 个任务</div>'}
+  filtered.forEach(t=>{
+    const pri=PRIORITIES[t.priority||"p2"]||PRIORITIES.p2;
+    const st=t.plannedDate?taskStatus(t):null;
+    h+='<div style="padding:10px 12px;margin-bottom:6px;border-radius:8px;background:var(--surface);border:1px solid var(--ep-border);border-left:3px solid '+pri.color+'">';
+    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
+    h+='<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:'+pri.bg+';color:'+pri.color+';font-weight:500">'+pri.label+'</span>';
+    if(st)h+='<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:var(--info-'+st+'-bg);color:var(--info-'+st+'-text);font-weight:500">'+statusText(st)+'</span>';
+    if(t.done)h+='<span style="font-size:10px;color:var(--success)">✅ 已完成</span>';
+    h+='</div>';
+    h+='<div style="font-size:13px;font-weight:500;color:var(--card-title);margin-bottom:4px;cursor:pointer" onclick="document.body.removeChild(this.parentNode.parentNode.parentNode);editTask(\''+t.id+'\')">'+escapeHtml(t.content)+'</div>';
+    if(t.note)h+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;padding:4px 8px;background:var(--ep-inner-bg);border-radius:4px">💬 '+escapeHtml(t.note)+'</div>';
+    let meta='';
+    if(t.plannedDate)meta+='📅 计划: '+t.plannedDate;
+    if(t.completedAt)meta+=' 🕐 完成: '+t.completedAt.slice(0,16);
+    if(meta)h+='<div style="font-size:11px;color:var(--text-muted)">'+meta+'</div>';
+    h+='</div>';
+  });
+  h+='<div style="text-align:center;margin-top:8px"><button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)" style="padding:6px 20px;border-radius:6px;border:1px solid var(--ghost-border);background:var(--btn-cancel-bg);color:var(--btn-cancel-text);cursor:pointer;font-size:12px">关闭</button></div>';
+  box.innerHTML=h;overlay.appendChild(box);document.body.appendChild(overlay);
+}
+function renderSwimlaneView(){
+  const p=data.projects[currentProjId];if(!p)return;
+  const dates=getWeekDates(currentWeekStart);let modules=[...p.modules];
+  const fm=document.getElementById("moduleFilter").value,pf=document.getElementById("priFilter").value;
+  if(fm)modules=modules.filter(m=>m===fm);
+  const board=document.getElementById("board");board.innerHTML="";board.className="swimlane-board";
+  const cols=dates.length+1; // +1 for row headers
+  board.style.gridTemplateColumns="auto repeat("+dates.length+",1fr)";
+  // Header row
+  const hdr=document.createElement("div");board.appendChild(hdr);
+  dates.forEach(d=>{const h=document.createElement("div");h.className="swimlane-header-cell";h.innerHTML=dayLabel(d)+"<br><span style='font-size:10px;color:var(--text-muted)'>"+fmtDisplay(d)+"</span>";board.appendChild(h)});
+  // Module rows
+  modules.forEach(m=>{
+    const rh=document.createElement("div");rh.className="swimlane-row-header";rh.textContent=m;board.appendChild(rh);
+    dates.forEach(d=>{
+      const ds=fmtDate(d);const tasks=(p.tasks[ds]||[]).filter(t=>t.module===m).filter(t=>!pf||t.priority===pf);
+      const cell=document.createElement("div");cell.className="swimlane-cell";cell.dataset.date=ds;cell.dataset.module=m;
+      cell.style.cursor="pointer";cell.title="点击查看详情";
+      cell.addEventListener("click",function(e){if(e.target===this||e.target.closest(".swimlane-cell")===this&&!e.target.closest(".swimlane-card"))showSwimlaneDetail(this.dataset.date,this.dataset.module)});
+      tasks.forEach(t=>{
+        const st=t.plannedDate?taskStatus(t):null;let cc="swimlane-card";
+        if(st==="overdue")cc+=" overdue";else if(st==="late")cc+=" late";else if(st==="ontime")cc+=" ontime";
+        if(t.done)cc+=" done";
+        const priC=(PRIORITIES[t.priority||"p2"]||PRIORITIES.p2).color;
+        const tag='<span class="swimlane-pri-tag" style="color:'+priC+';background:'+(PRIORITIES[t.priority||"p2"]||PRIORITIES.p2).bg+'">'+((PRIORITIES[t.priority||"p2"]||PRIORITIES.p2).label)+'</span>';
+        const stTag=st?'<span class="card-tag '+st+'" style="font-size:9px">'+statusText(st)+'</span>':'';
+        cell.innerHTML+='<div class="'+cc+'" draggable="true" data-id="'+t.id+'"><div class="swimlane-card-title" onclick="editTask(\''+t.id+'\')">'+t.content+'</div><div>'+tag+(t.done&&t.completedAt?' <span style="font-size:9px;color:var(--text-muted)">🕐'+fmtCompleted(t.completedAt)+'</span>':'')+stTag+'</div></div>';
+      });
+      board.appendChild(cell);
+    });
+  });
+  // Drag handlers for swimlane
+  board.querySelectorAll(".swimlane-cell").forEach(cell=>{
+    cell.addEventListener("dragover",function(e){e.preventDefault();this.classList.add("drop-hover")});
+    cell.addEventListener("dragleave",function(){this.classList.remove("drop-hover")});
+    cell.addEventListener("drop",function(e){
+      e.preventDefault();this.classList.remove("drop-hover");
+      const id=e.dataTransfer.getData("text/plain");if(!id)return;
+      const td=this.dataset.date,tm=this.dataset.module;
+      let task=null;
+      for(const dk of Object.keys(p.tasks)){const idx=p.tasks[dk].findIndex(t=>t.id===id);if(idx!==-1){task=p.tasks[dk].splice(idx,1)[0];break}}
+      if(!task)return;
+      task.module=tm;if(!p.tasks[td])p.tasks[td]=[];p.tasks[td].push(task);
+      saveData("↕️ 泳道移动: "+task.content.slice(0,20));renderBoard();renderSidebar();
+    });
+  });
+  board.querySelectorAll(".swimlane-card").forEach(c=>{
+    c.addEventListener("dragstart",function(e){e.dataTransfer.setData("text/plain",this.dataset.id);c.classList.add("dragging")});
+    c.addEventListener("dragend",function(){c.classList.remove("dragging")});
+  });
+}
+function prevWeek(){currentWeekStart.setDate(currentWeekStart.getDate()-7);renderBoard()}
+function nextWeek(){currentWeekStart.setDate(currentWeekStart.getDate()+7);renderBoard()}
+function goToday(){currentWeekStart=getWeekStart(new Date());renderBoard()}
+
+function syncCompletedTime(){const cb=document.getElementById("taskDone"),ca=document.getElementById("taskCompletedAt");if(cb.checked&&!ca.value)ca.value=nowStr()}
+function toggleDone(id){const p=data.projects[currentProjId];let content="",wasDone=false;for(const d of Object.keys(p.tasks)){const t=p.tasks[d].find(x=>x.id===id);if(t){content=t.content;wasDone=t.done;t.done=!t.done;if(t.done&&!t.completedAt)t.completedAt=nowStr();else if(!t.done)t.completedAt="";break}}saveData(wasDone?"↩️ 取消: "+content.slice(0,20):"✅ 完成: "+content.slice(0,20));renderBoard();renderSidebar()}
+
+function showTaskModal(ds){
+  editingTaskId=null;const p=data.projects[currentProjId];
+  document.getElementById("taskModalTitle").textContent="📝 新建任务";
+  const sel=document.getElementById("taskModule");sel.innerHTML="";p.modules.forEach(m=>sel.innerHTML+='<option value="'+m+'">'+m+'</option>');
+  const pri=document.getElementById("taskPriority");pri.innerHTML="";Object.entries(PRIORITIES).forEach(([k,v])=>pri.innerHTML+='<option value="'+k+'">'+v.label+'</option>');pri.value="p2";
+  document.getElementById("taskContent").value="";document.getElementById("taskNote").value="";
+  document.getElementById("taskPlanned").value="";document.getElementById("taskCompletedAt").value="";
+  document.getElementById("taskDone").checked=false;sel.dataset.date=ds;
+  document.getElementById("deleteTaskBtn").style.display="none";document.getElementById("taskStatusBadge").innerHTML="";
+  document.getElementById("taskModal").classList.add("show");
+}
+function editTask(id){
+  editingTaskId=id;const p=data.projects[currentProjId];
+  document.getElementById("taskModalTitle").textContent="✏️ 编辑任务";
+  const sel=document.getElementById("taskModule");sel.innerHTML="";p.modules.forEach(m=>sel.innerHTML+='<option value="'+m+'">'+m+'</option>');
+  let task=null;for(const d of Object.keys(p.tasks)){const f=p.tasks[d].find(t=>t.id===id);if(f){task=f;sel.dataset.date=d;break}}
+  if(task){
+    const pri=document.getElementById("taskPriority");pri.innerHTML="";Object.entries(PRIORITIES).forEach(([k,v])=>pri.innerHTML+='<option value="'+k+'">'+v.label+'</option>');pri.value=task.priority||"p2";
+    document.getElementById("taskContent").value=task.content;document.getElementById("taskModule").value=task.module;document.getElementById("taskNote").value=task.note||"";
+    document.getElementById("taskPlanned").value=task.plannedDate||"";document.getElementById("taskCompletedAt").value=task.completedAt||"";document.getElementById("taskDone").checked=task.done||false;
+    const badge=document.getElementById("taskStatusBadge");const st=taskStatus(task);
+    if(st==='overdue')badge.innerHTML='<div class="info-badge overdue">⏰ 此任务已超出计划时间，请尽快处理！</div>';
+    else if(st==='late')badge.innerHTML='<div class="info-badge late">⚠️ 实际完成时间晚于计划时间（已延期）</div>';
+    else if(st==='ontime')badge.innerHTML='<div class="info-badge ontime">✅ 按期完成</div>';
+    else badge.innerHTML="";
+  }
+  document.getElementById("deleteTaskBtn").style.display="inline-block";document.getElementById("taskModal").classList.add("show");
+}
+function saveTask(){
+  const c=document.getElementById("taskContent").value.trim();if(!c)return alert("请输入任务内容");
+  const m=document.getElementById("taskModule").value,n=document.getElementById("taskNote").value.trim();
+  const pd=document.getElementById("taskPlanned").value,ca=document.getElementById("taskCompletedAt").value;
+  const d=document.getElementById("taskDone").checked,ds=document.getElementById("taskModule").dataset.date;
+  const pri=document.getElementById("taskPriority").value;
+  const p=data.projects[currentProjId];
+  if(editingTaskId){for(const dk of Object.keys(p.tasks)){const t=p.tasks[dk].find(x=>x.id===editingTaskId);if(t){t.content=c;t.module=m;t.note=n;t.plannedDate=pd;t.done=d;t.completedAt=d?ca||nowStr():"";t.priority=pri;break}}}
+  else{if(!p.tasks[ds])p.tasks[ds]=[];p.tasks[ds].push({id:genId(),content:c,module:m,note:n,plannedDate:pd,done:d,completedAt:d?ca||nowStr():"",priority:pri})}
+  hideModal("taskModal");saveData(editingTaskId?"✏️ 编辑: "+c.slice(0,20):"➕ 新增: "+c.slice(0,20));renderBoard();renderSidebar();
+}
+function deleteTask(){if(!editingTaskId)return;const p=data.projects[currentProjId];let content="";for(const d of Object.keys(p.tasks)){const t=p.tasks[d].find(x=>x.id===editingTaskId);if(t){content=t.content;break}}for(const d of Object.keys(p.tasks)){p.tasks[d]=p.tasks[d].filter(t=>t.id!==editingTaskId);if(!p.tasks[d].length)delete p.tasks[d]}hideModal("taskModal");saveData("🗑️ 删除: "+content.slice(0,20));renderBoard();renderSidebar()}
+function quickDelete(id){if(!confirm("删除此任务？"))return;const p=data.projects[currentProjId];let content="";for(const d of Object.keys(p.tasks)){const t=p.tasks[d].find(x=>x.id===id);if(t){content=t.content;break}}for(const d of Object.keys(p.tasks)){p.tasks[d]=p.tasks[d].filter(t=>t.id!==id);if(!p.tasks[d].length)delete p.tasks[d]}saveData("🗑️ 删除: "+content.slice(0,20));renderBoard();renderSidebar()}
+
+function showProjectModal(edit){
+  const isEdit=edit&&currentProjId&&data.projects[currentProjId];
+  document.getElementById("projectModalTitle").textContent=isEdit?"✏️ 编辑项目":"📁 新建项目";
+  const cc=document.getElementById("colorOptions");cc.innerHTML="";
+  COLORS.forEach(c=>{const div=document.createElement("div");div.className="color-opt"+((isEdit&&data.projects[currentProjId].color===c)||(!isEdit&&c==="#4f6ef7")?" selected":"");div.style.background=c;div.onclick=function(){cc.querySelectorAll(".color-opt").forEach(el=>el.classList.remove("selected"));this.classList.add("selected")};cc.appendChild(div)});
+  document.getElementById("projName").value=isEdit?data.projects[currentProjId].name:"";document.getElementById("deleteProjBtn").style.display=isEdit?"inline-block":"none";
+  renderProjModules(isEdit?data.projects[currentProjId].modules:["基础数据"]);document.getElementById("projectModal").classList.add("show");
+}
+function renderProjModules(mods){editingProjModules=[...mods];const el=document.getElementById("projModuleList");el.innerHTML="";editingProjModules.forEach((m,i)=>{const s=document.createElement("span");s.className="tag-item";s.innerHTML=m+' <span class="remove" onclick="removeProjModule('+i+')">✕</span>';el.appendChild(s)})}
+function addProjModule(){const v=document.getElementById("projModuleInput").value.trim();if(!v||editingProjModules.includes(v))return;editingProjModules.push(v);renderProjModules(editingProjModules);document.getElementById("projModuleInput").value=""}
+function removeProjModule(i){editingProjModules.splice(i,1);renderProjModules(editingProjModules)}
+function saveProject(){const n=document.getElementById("projName").value.trim();if(!n)return alert("请输入项目名称");const c=document.querySelector("#colorOptions .color-opt.selected");const sc=c?c.style.background:"#4f6ef7";if(!editingProjModules.length)return alert("至少添加一个模块");const isEdit=currentProjId&&data.projects[currentProjId]&&document.getElementById("deleteProjBtn").style.display==="inline-block";if(isEdit){const p=data.projects[currentProjId];p.name=n;p.color=sc;p.modules=editingProjModules}else{const id="proj_"+Date.now();data.projects[id]={id,name:n,color:sc,modules:editingProjModules,tasks:{}};currentProjId=id;data.currentProjId=id}hideModal("projectModal");saveData(isEdit?"📁 编辑项目: "+n:"📁 新建项目: "+n);renderAll()}
+function deleteProject(){if(!confirm('确认删除"'+data.projects[currentProjId].name+'"？'))return;const name=data.projects[currentProjId].name;delete data.projects[currentProjId];const k=Object.keys(data.projects);currentProjId=k.length?k[0]:null;data.currentProjId=currentProjId;hideModal("projectModal");saveData("🗑️ 删除项目: "+name);renderAll()}
+
+// ====== 导出面板 ======
+function toggleExportPanel(){document.getElementById("exportPanel").classList.toggle("collapsed")}
+function epDirty(){lastReport=null;document.getElementById("epPreview").className="ep-empty";document.getElementById("epPreview").textContent="📅 修改了范围，请重新生成"}
+function getFilteredTasks(startStr,endStr){const p=data.projects[currentProjId];if(!p)return null;const start=new Date(startStr),end=new Date(endStr);end.setHours(23,59,59,999);const all=[];for(const[ds,tasks]of Object.entries(p.tasks)){const d=new Date(ds);if(d>=start&&d<=end)all.push(...tasks.map(t=>({...t,ds})))}all.sort((a,b)=>a.ds.localeCompare(b.ds));return all}
+function generateReport(){const s=document.getElementById("epStart").value,e=document.getElementById("epEnd").value;if(!s||!e)return alert("请先选择日期范围");const tasks=getFilteredTasks(s,e);if(!tasks||!tasks.length)return alert("所选日期范围内没有任务");const proj=data.projects[currentProjId];const kw=document.getElementById("epKeywords").value.trim();const done=tasks.filter(t=>t.done),overdue=tasks.filter(t=>!t.done&&taskStatus(t)==='overdue'),other=tasks.filter(t=>!t.done&&taskStatus(t)!=='overdue');const byMod={};tasks.forEach(t=>{if(!byMod[t.module])byMod[t.module]={done:[],undone:[]};if(t.done)byMod[t.module].done.push(t);else byMod[t.module].undone.push(t)});const moduleSummary=Object.entries(byMod).map(([m,g])=>m+'（完成'+g.done.length+'/'+(g.done.length+g.undone.length)+'）').join('、');const weekLabel=fmtDisplay(new Date(s))+'~'+fmtDisplay(new Date(e));let r='## 📊 本周概要\n\n**项目**：'+proj.name+'　　**期间**：'+weekLabel+'\n\n| 分类 | 数量 |\n|------|------|\n| ✅ 已完成 | '+done.length+' |\n| ⏰ 逾期 | '+overdue.length+' |\n| 📝 进行中 | '+other.length+' |\n| **合计** | **'+tasks.length+'** |\n\n**涉及模块**：'+moduleSummary+'\n\n';if(kw)r+='**关注方向**：'+kw+'\n\n';r+='---\n\n## 📋 详细事项\n\n';done.forEach(t=>{r+='- ✅ *完成* '+t.content+'【'+t.module+'】'+(t.note?' — '+t.note:'')+'\n'});overdue.forEach(t=>{r+='- ⏰ *逾期* '+t.content+'【'+t.module+'】'+(t.note?' — '+t.note:'')+'\n'});other.forEach(t=>{r+='- 📝 *待办* '+t.content+'【'+t.module+'】'+(t.note?' — '+t.note:'')+'\n'});r+='\n---\n\n';if(kw)r+='## 🎯 重点关注\n根据关键词「'+kw+'」，本周需特别关注：\n- （请在 Prompt 中向 AI 说明具体要求）\n\n';r+='## 🤖 AI 周报撰写\n将以下内容作为 Prompt 输入给 AI：\n\n> 请根据以下本周运维工作记录，写一份正式的周报。\n> 项目名称：'+proj.name+'\n> 日期范围：'+weekLabel+'\n'+(kw?'\n> 重点关注：'+kw+'\n':'')+'\n> ### 本周工作记录\n';tasks.forEach(t=>{r+='> - ['+(t.done?'x':' ')+'] '+t.content+'（'+t.module+'）—— '+t.note+'\n'});r+='\n> 请用中文分条输出，包含：本周完成、待办事项、风险提示、下周计划。';lastReport=r;const el=document.getElementById("epPreview");el.className="ep-preview";el.textContent=r}
+function copyPrompt(){if(!lastReport)return alert("请先生成周报");const s=document.getElementById("epStart").value,e=document.getElementById("epEnd").value;const tasks=getFilteredTasks(s,e);if(!tasks||!tasks.length)return;const proj=data.projects[currentProjId];const kw=document.getElementById("epKeywords").value.trim();const done=tasks.filter(t=>t.done),overdue=tasks.filter(t=>!t.done&&taskStatus(t)==='overdue'),other=tasks.filter(t=>!t.done&&taskStatus(t)!=='overdue');let p='请根据以下本周运维工作记录，写一份正式的周报。\n项目名称：'+proj.name+'\n日期范围：'+fmtDisplay(new Date(s))+'~'+fmtDisplay(new Date(e))+'\n';if(kw)p+='重点关注：'+kw+'\n';p+='\n### 统计\n已完成：'+done.length+' 逾期：'+overdue.length+' 进行中：'+other.length+' 合计：'+tasks.length+'\n\n### 本周工作记录\n';tasks.forEach(t=>{p+='- ['+(t.done?'x':' ')+'] '+t.content+'（'+t.module+'）'+(t.note?' —— '+t.note:'')+'\n'});p+='\n### 要求\n1. 用中文分条输出\n2. 包含：本周完成、待办事项、风险提示、下周计划\n3. 条理清晰，语言正式\n';navigator.clipboard.writeText(p).then(()=>alert("✅ Prompt 已复制，可直接粘贴到 ChatGPT / Claude / DeepSeek 使用")).catch(()=>alert("复制失败"))}
+function confirmExport(){if(!lastReport)return alert("请先生成周报，再导出");const text=buildObsidianExport(document.getElementById("epStart").value,document.getElementById("epEnd").value);if(!text)return alert("导出内容为空");document.getElementById("exportConfirmPreview").textContent=text;document.getElementById("exportConfirmModal").classList.add("show")}
+function doExportMd(){const s=document.getElementById("epStart").value,e=document.getElementById("epEnd").value;const proj=data.projects[currentProjId];if(!proj)return;const text=buildObsidianExport(s,e);const blob=new Blob([text],{type:"text/markdown"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=proj.name+'_周报_'+s+'.md';a.click();hideModal("exportConfirmModal")}
+function buildObsidianExport(startStr,endStr){const p=data.projects[currentProjId];if(!p)return"";const start=new Date(startStr),end=new Date(endStr);end.setHours(23,59,59,999);const weekLabel=fmtDisplay(start)+' ~ '+fmtDisplay(end);let allTasks=[];for(const[ds,tasks]of Object.entries(p.tasks)){const d=new Date(ds);if(d>=start&&d<=end)allTasks.push(...tasks.map(t=>({...t,ds})))}allTasks.sort((a,b)=>a.ds.localeCompare(b.ds));const total=allTasks.length,doneArr=allTasks.filter(t=>t.done),overdueArr=allTasks.filter(t=>!t.done&&taskStatus(t)==='overdue'),otherArr=allTasks.filter(t=>!t.done&&taskStatus(t)!=='overdue');let r='---\ntags: ['+p.name+', 周报]\ncreated: '+fmtDate(new Date())+'\nproject: '+p.name+'\nweek: '+weekLabel+'\n---\n\n# '+p.name+' · 周报（'+weekLabel+'）\n\n## 📊 统计\n\n| 状态 | 数量 | 占比 |\n|------|------|------|\n| ✅ 已完成 | '+doneArr.length+' | '+(total?Math.round(doneArr.length/total*100)+'%':'0%')+' |\n| ⏰ 逾期未完成 | '+overdueArr.length+' | '+(total?Math.round(overdueArr.length/total*100)+'%':'0%')+' |\n| 📝 待处理 | '+otherArr.length+' | '+(total?Math.round(otherArr.length/total*100)+'%':'0%')+' |\n| **合计** | **'+total+'** | **100%** |\n\n';if(doneArr.length){r+='## ✅ 已完成\n\n';doneArr.forEach(t=>{r+='- [x] '+t.content+'（'+t.module+'）'+(t.note?' — '+t.note:'')+' 📅'+t.plannedDate+' 🕐'+t.completedAt.slice(5,16)+'\n'});r+='\n'}if(overdueArr.length){r+='## ⏰ 逾期未完成\n\n';overdueArr.forEach(t=>{r+='- [ ] '+t.content+'（'+t.module+'）'+(t.note?' — '+t.note:'')+' 📅'+t.plannedDate+'（已逾期）\n'});r+='\n'}if(otherArr.length){r+='## 📝 待处理\n\n';otherArr.forEach(t=>{r+='- [ ] '+t.content+'（'+t.module+'）'+(t.note?' — '+t.note:'')+(t.plannedDate?' 📅'+t.plannedDate:'')+'\n'});r+='\n'}return r}
+
+function hideModal(id){document.getElementById(id).classList.remove("show")}
+function showStats(){
+  const p=data.projects[currentProjId];if(!p)return alert("请先选择项目");
+  const dates=getWeekDates(currentWeekStart);let all=[];
+  dates.forEach(d=>{const ds=fmtDate(d);if(p.tasks[ds])all.push(...p.tasks[ds].map(t=>({...t,ds})))});
+  const total=all.length,done=all.filter(t=>t.done).length,overdue=all.filter(t=>!t.done&&taskStatus(t)==='overdue').length,pending=all.filter(t=>!t.done&&taskStatus(t)!=='overdue').length;
+  const pct=total?(done/total*100).toFixed(1):'0.0';
+  const byMod={};all.forEach(t=>{if(!byMod[t.module])byMod[t.module]=0;byMod[t.module]++});
+  const byPri={p0:0,p1:0,p2:0,p3:0};all.forEach(t=>{byPri[t.priority||'p2']++});
+  const tc='color:var(--text);padding:6px 8px;border-bottom:1px solid var(--ep-border)';
+  const tv='color:var(--text);padding:6px 8px;border-bottom:1px solid var(--ep-border);font-weight:600';
+  let h='<div style="margin-bottom:16px">';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  h+='<tr><td style="'+tc+'">📊 总任务</td><td style="'+tv+'">'+total+'</td></tr>';
+  h+='<tr><td style="'+tc+';color:var(--success);font-weight:500">✅ 完成率</td><td style="'+tv+'">'+done+'/'+total+' ('+pct+'%)</td></tr>';
+  h+='<tr><td style="'+tc+';color:#ef4444;font-weight:500">⏰ 逾期</td><td style="'+tv+'">'+overdue+'</td></tr>';
+  h+='<tr><td style="'+tc+';color:#f59e0b;font-weight:500">📝 待处理</td><td style="'+tv+'">'+pending+'</td></tr>';
+  h+='</table></div><div style="margin-bottom:12px"><h4 style="font-size:13px;margin-bottom:6px;color:var(--text)">📁 模块分布</h4>';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  Object.entries(byMod).forEach(([m,c])=>{const pct2=total?(c/total*100).toFixed(1):'0';h+='<tr><td style="color:var(--text-secondary);padding:4px 8px;border-bottom:1px solid var(--ep-border)">'+m+'</td><td style="color:var(--text);padding:4px 8px;border-bottom:1px solid var(--ep-border);font-weight:500;text-align:right">'+c+' ('+pct2+'%)</td></tr>'});
+  h+='</table></div><div><h4 style="font-size:13px;margin-bottom:6px;color:var(--text)">🏷️ 优先级分布</h4>';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  Object.entries(byPri).forEach(([k,c])=>{if(!c)return;const l=(PRIORITIES[k]||PRIORITIES.p2).label;h+='<tr><td style="color:var(--text-secondary);padding:4px 8px;border-bottom:1px solid var(--ep-border)">'+l+'</td><td style="color:var(--text);padding:4px 8px;border-bottom:1px solid var(--ep-border);font-weight:500;text-align:right">'+c+'</td></tr>'});
+  h+='</table></div>';
+  document.getElementById("statsContent").innerHTML=h;document.getElementById("statsModal").classList.add("show");
+}
+function renderAll(){renderSidebar();renderBoard()}
+function resetCurrentProject(){if(!currentProjId||!data.projects[currentProjId])return alert("请先选择项目");if(!confirm('‼️ 确认清空「'+data.projects[currentProjId].name+'」的所有任务数据？'))return;if(!confirm('⚠️ 再次确认：此操作会删除当前项目的全部任务，不可恢复！\n\n确定要清空吗？'))return;data.projects[currentProjId].tasks={};saveData("🗑️ 清空项目: "+data.projects[currentProjId].name,true);renderAll()}
+function loadDemoProject(){const demo=data.projects["demo_sysops"];if(demo&&Object.keys(demo.tasks||{}).length>0){currentProjId="demo_sysops";data.currentProjId="demo_sysops";saveData("📖 加载演示数据",true);renderAll();return}const def=getDefaultData().projects["demo_sysops"];if(!data.projects["demo_sysops"])data.projects["demo_sysops"]={id:"demo_sysops",name:def.name,color:def.color,modules:[...def.modules],tasks:{}};Object.entries(def.tasks).forEach(([ds,tasks])=>{data.projects["demo_sysops"].tasks[ds]=tasks.map(t=>({...t}))});currentProjId="demo_sysops";data.currentProjId="demo_sysops";saveData("📖 加载演示数据",true);renderAll()}
+function backupData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download='kanban_backup_'+fmtDate(new Date())+'.json';a.click()}
+function restoreData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){try{const d=JSON.parse(e.target.result);if(!d.projects||typeof d.projects!=='object')throw new Error("格式不对");if(!confirm('恢复数据将覆盖当前全部内容，确定继续？'))return;data=d;saveData(null,true);currentProjId=data.currentProjId||Object.keys(data.projects)[0]||null;renderAll();alert("✅ 数据已恢复")}catch(err){alert("❌ 备份文件格式错误："+err.message)}finally{event.target.value=""}};reader.readAsText(file)}
+function showSearchModal(){const sm=document.getElementById("searchModal");document.getElementById("searchInput").value="";document.getElementById("searchResults").innerHTML="";sm.classList.add("show");sm.onclick=function(e){if(e.target===this)hideModal("searchModal")};renderSearchHistory();setTimeout(()=>document.getElementById("searchInput").focus(),100)}
+function showHistory(){
+  let hist=[];try{hist=JSON.parse(localStorage.getItem("kanban_history")||"[]")}catch(e){}
+  if(!hist.length)return alert("暂无版本历史");
+  const overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:var(--modal-overlay);z-index:200;display:flex;align-items:center;justify-content:center";
+  overlay.onclick=function(e){if(e.target===this)document.body.removeChild(overlay)};
+  const box=document.createElement("div");box.style.cssText="background:var(--modal-bg);border-radius:12px;padding:20px 24px;max-width:650px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)";
+  let h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h+='<span style="font-size:15px;font-weight:600;color:var(--text)">⏳ 版本历史</span>';
+  h+='<button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted)">✕</button></div>';
+  h+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">共 '+hist.length+' 个版本 · 自动保存最近 500 次操作</div>';
+  h+='<input id="histSearch" type="text" placeholder="搜索历史操作…" style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--input-text);font-size:12px;outline:none;margin-bottom:8px" oninput="renderHistoryList()" autofocus>';
+  h+='<div id="histList" style="max-height:55vh;overflow-y:auto"></div>';
+  h+='<div style="text-align:center;margin-top:12px"><button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)" style="padding:6px 20px;border-radius:6px;border:1px solid var(--ghost-border);background:var(--btn-cancel-bg);color:var(--btn-cancel-text);cursor:pointer;font-size:12px">关闭</button></div>';
+  box.innerHTML=h;overlay.appendChild(box);document.body.appendChild(overlay);
+  window._histData=hist;
+  renderHistoryList();
+  setTimeout(()=>{const inp=document.getElementById("histSearch");if(inp)inp.focus()},100);
+}
+function renderHistoryList(){
+  const hist=window._histData||[],inp=document.getElementById("histSearch"),list=document.getElementById("histList");
+  if(!list)return;
+  const q=inp?inp.value.trim().toLowerCase():"";let html="";
+  const filtered=q?hist.filter(v=>(v.action||"").toLowerCase().includes(q)):hist;
+  if(!filtered.length){list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">没有匹配的历史记录</div>';return}
+  for(let i=filtered.length-1;i>=0;i--){
+    const v=filtered[i];
+    const origIdx=hist.indexOf(v);
+    const dt=new Date(v.ts);
+    const dateStr=('0'+(dt.getMonth()+1)).slice(-2)+'/'+('0'+dt.getDate()).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+    const isCurrent=i===filtered.length-1;
+    html+='<div style="padding:7px 10px;margin-bottom:3px;border-radius:6px;border:1px solid '+(isCurrent?'var(--primary)':'var(--ep-border)')+';background:'+(isCurrent?'var(--tag-module-bg)':'var(--surface)')+';display:flex;align-items:center;gap:8px">';
+    html+='<span style="font-size:11px;color:'+(isCurrent?'var(--sidebar-active-text)':'var(--text-muted)')+';font-weight:'+(isCurrent?'600':'400')+';min-width:30px">V1.'+origIdx+'</span>';
+    html+='<span style="font-size:11px;color:var(--text-muted);min-width:60px">'+dateStr+'</span>';
+    html+='<span style="flex:1;font-size:12px;color:var(--text-secondary)">'+(v.action||"🔄 修改")+'</span>';
+    if(isCurrent)html+='<span style="font-size:10px;padding:1px 8px;border-radius:4px;background:var(--primary);color:#fff;flex-shrink:0">当前</span>';
+    else html+='<button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode.parentNode);restoreVersion('+origIdx+')" style="padding:1px 8px;border-radius:4px;border:1px solid var(--warn);background:transparent;color:var(--warn);cursor:pointer;font-size:10px;flex-shrink:0">↩ 回滚</button>';
+    html+='</div>';
+  }
+  list.innerHTML=html;
+}
+function restoreVersion(idx){
+  if(!confirm('⚠️ 回滚将覆盖当前全部数据，确定继续？'))return;
+  let hist=[];try{hist=JSON.parse(localStorage.getItem("kanban_history")||"[]")}catch(e){}
+  if(idx<0||idx>=hist.length)return alert("无效版本");
+  data=JSON.parse(JSON.stringify(hist[idx].data));
+  saveData("⏳ 回滚到 V1."+idx);currentProjId=data.currentProjId||Object.keys(data.projects)[0]||null;renderAll();
+  alert("✅ 已回滚到 V1."+idx);
+}
+function getWebDAVConfig(){try{return JSON.parse(localStorage.getItem("kanban_webdav_config")||"{}")}catch(e){return{}}}
+function saveWebDAVConfig(cfg){try{localStorage.setItem("kanban_webdav_config",JSON.stringify(cfg))}catch(e){}updateWebDAVButton()}
+function updateWebDAVButton(){const cfg=getWebDAVConfig(),btn=document.querySelector('[onclick="showWebDAVConfig()"]');if(btn){const s=cfg.url&&cfg.autoSync?"☁️ ✓":(cfg.url?"☁️ ⚡":"☁️ 同步");btn.textContent=s;btn.title=cfg.url?(cfg.useProxy?"代理模式":"直连模式"):""}}
+function showWebDAVConfig(){
+  const cfg=getWebDAVConfig();
+  const overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:var(--modal-overlay);z-index:200;display:flex;align-items:center;justify-content:center";
+  overlay.onclick=function(e){if(e.target===this)document.body.removeChild(overlay)};
+  const box=document.createElement("div");box.style.cssText="background:var(--modal-bg);border-radius:12px;padding:20px 24px;max-width:520px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)";
+  const s='style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--input-text);font-size:12px;outline:none;box-sizing:border-box"';
+  const l='style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;margin-top:10px"';
+  let h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h+='<span style="font-size:15px;font-weight:600;color:var(--text)">☁️ WebDAV 同步</span>';
+  h+='<button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted)">✕</button></div>';
+  h+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">同步到任何 WebDAV 服务（坚果云、自建 NAS 等）</div>';
+  // 代理模式开关
+  const useProxy=cfg.useProxy||false;
+  h+='<label '+l+'><input id="wdUseProxy" type="checkbox" '+(useProxy?'checked':'')+' onchange="document.getElementById(\'proxyGroup\').style.display=this.checked?\'block\':\'none\';document.getElementById(\'directGroup\').style.display=this.checked?\'none\':\'block\'"> 使用本地代理服务器（绕过 CORS 限制）</label>';
+  h+='<div id="proxyGroup" style="display:'+(useProxy?'block':'none')+';background:var(--surface);padding:10px;border-radius:8px;margin-top:6px">';
+  h+='<div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">先启动代理服务器：<code style="background:#1e293b;color:#e2e8f0;padding:2px 6px;border-radius:3px;font-size:10px">node kanban-server.js</code></div>';
+  h+='<label '+l+' style="margin-top:0">代理地址</label>'
+    +'<input id="wdProxyHost" type="text" '+s+' placeholder="http://localhost:3456" value="'+(cfg.proxyHost||'http://localhost:3456')+'">';
+  h+='<label '+l+'>WebDAV 地址</label><input id="wdUrl2" type="url" '+s+' placeholder="https://example.com/dav/kanban.json" value="'+(cfg.url||'')+'">';
+  h+='<label '+l+'>用户名</label><input id="wdUser2" type="text" '+s+' placeholder="WebDAV 用户名" value="'+(cfg.user||'')+'">';
+  h+='<label '+l+'>密码</label><input id="wdPass2" type="password" '+s+' placeholder="第三方应用密码" value="'+(cfg.pass||'')+'">';
+  h+='</div>'; // end proxyGroup
+  h+='<div id="directGroup" style="display:'+(useProxy?'none':'block')+'">';
+  h+='<label '+l+'>WebDAV 地址</label><input id="wdUrl" type="url" '+s+' placeholder="https://example.com/dav/kanban.json" value="'+(cfg.url||'')+'">';
+  h+='<label '+l+'>用户名</label><input id="wdUser" type="text" '+s+' placeholder="WebDAV 用户名" value="'+(cfg.user||'')+'">';
+  h+='<label '+l+'>密码</label><input id="wdPass" type="password" '+s+' placeholder="WebDAV 密码" value="'+(cfg.pass||'')+'">';
+  h+='</div>';
+  h+='<label '+l+'><input id="wdAuto" type="checkbox" '+(cfg.autoSync?'checked':'')+'> 自动同步（每次修改自动上传）</label>';
+  h+='<div id="wdStatus" style="font-size:12px;color:var(--text-muted);margin:10px 0;padding:8px;border-radius:6px;background:var(--surface);display:none;white-space:pre-line"></div>';
+  h+='<div style="display:flex;gap:6px;margin-top:6px">';
+  h+='<button onclick="testWebDAV()" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--ghost-border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px">🔄 测试连接</button>';
+  h+='<button onclick="doSaveWebDAVConfig()" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer;font-size:12px;font-weight:500">💾 保存</button>';
+  h+='</div><div style="display:flex;gap:6px;margin-top:6px">';
+  h+='<button onclick="webdavPull()" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--ghost-border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px">⬇️ 从云端拉取</button>';
+  h+='<button onclick="webdavPush()" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--ghost-border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px">⬆️ 手动上传</button>';
+  h+='</div>';
+  h+='<div style="margin-top:10px;font-size:11px;color:var(--text-muted)">💡 终端运行 <code style="background:#1e293b;color:#e2e8f0;padding:1px 4px;border-radius:3px">node kanban-server.js</code> 启动代理</div>';
+  box.innerHTML=h;overlay.appendChild(box);document.body.appendChild(overlay);
+}
+function getWDInputs(){
+  const useProxy=document.getElementById("wdUseProxy").checked;
+  if(useProxy)return{url:document.getElementById("wdUrl2").value.trim(),user:document.getElementById("wdUser2").value.trim(),pass:document.getElementById("wdPass2").value.trim(),proxyHost:document.getElementById("wdProxyHost").value.trim()||"http://localhost:3456",useProxy:true};
+  return{url:document.getElementById("wdUrl").value.trim(),user:document.getElementById("wdUser").value.trim(),pass:document.getElementById("wdPass").value.trim(),useProxy:false};
+}
+function doSaveWebDAVConfig(){
+  const inp=getWDInputs();if(inp.url&&!inp.url.startsWith("http"))return wdStatus("❌ 地址必须以 http:// 或 https:// 开头","#ef4444");
+  const cfg={...getWebDAVConfig(),...inp,autoSync:document.getElementById("wdAuto").checked};
+  saveWebDAVConfig(cfg);wdStatus("✅ 配置已保存"+(cfg.autoSync?"，自动同步已开启":""),"#10b981");
+}
+function wdStatus(msg,color){
+  const el=document.getElementById("wdStatus");if(!el)return;
+  el.style.display="block";el.textContent=msg;if(color)el.style.color=color;
+  setTimeout(()=>{if(el)el.style.display="none"},color==="#ef4444"?8000:3000);
+}
+function getWebDAVHeaders(){
+  const cfg=getWebDAVConfig();if(!cfg.url||!cfg.user||!cfg.pass)return null;
+  return{url:cfg.url,user:cfg.user,pass:cfg.pass,useProxy:cfg.useProxy,proxyHost:cfg.proxyHost||"http://localhost:3456"}
+}
+function getAPIBase(){const wh=getWebDAVHeaders();return wh&&wh.useProxy?wh.proxyHost:null}
+async function proxyFetch(path,body){
+  const wh=getWebDAVHeaders();if(!wh)return null;
+  const base=getAPIBase();if(!base)return null;
+  const url=base+path+(path==="/api/pull"||path==="/api/health"?"?url="+encodeURIComponent(wh.url)+"&user="+encodeURIComponent(wh.user)+"&pass="+encodeURIComponent(wh.pass):"");
+  try{
+    const opts={method:path==="/api/push"?"POST":"GET",headers:{}};
+    if(path==="/api/push"){opts.headers["Content-Type"]="application/json";opts.body=body}
+    if(path==="/api/health"){opts.headers["x-webdav-url"]=wh.url;opts.headers["x-webdav-user"]=wh.user;opts.headers["x-webdav-pass"]=wh.pass}
+    const r=await fetch(url,opts);
+    return await r.json();
+  }catch(e){return{ok:false,msg:e.message}}
+}
+async function testWebDAV(){
+  const inp=getWDInputs();const cfg={...getWebDAVConfig(),...inp};
+  if(!cfg.url||!cfg.user||!cfg.pass)return wdStatus("❌ 请先填写 WebDAV 信息","#ef4444");
+  wdStatus("⏳ 正在测试连接…");
+  if(cfg.useProxy){
+    const base=cfg.proxyHost||"http://localhost:3456";
+    try{
+      const hr=await fetch(base+"/api/health?url="+encodeURIComponent(cfg.url)+"&user="+encodeURIComponent(cfg.user)+"&pass="+encodeURIComponent(cfg.pass));
+      const hj=await hr.json();
+      if(hj.ok)wdStatus("✅ 代理服务器连接成功！","#10b981");
+      else wdStatus("❌ "+hj.msg,"#ef4444");
+    }catch(e){wdStatus("❌ 代理服务器连接失败 — 是否已启动？\n终端运行: node kanban-server.js","#ef4444")}
+  }else{
+    try{
+      const wh={url:cfg.url,headers:{"Authorization":"Basic "+btoa(cfg.user+":"+cfg.pass)}};
+      const r=await fetch(wh.url,{method:"PROPFIND",headers:{...wh.headers,"Depth":"0","Content-Type":"application/xml"},body:'<?xml version="1.0"?><d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/></d:prop></d:propfind>'});
+      if(r.ok||r.status===401||r.status===405||r.status===207)wdStatus("✅ 连接成功！","#10b981");
+      else if(r.status===404)wdStatus("✅ 连接成功（文件不存在，创建即可）","#10b981");
+      else wdStatus("❌ 连接失败："+r.status,"#ef4444");
+    }catch(e){
+      if(e.message==="Failed to fetch")wdStatus("❌ CORS 限制无法直连。\n勾选「使用本地代理服务器」来绕过。","#ef4444");
+      else wdStatus("❌ 连接失败："+e.message,"#ef4444");
+    }
+  }
+}
+async function saveToWebDAV(){
+  const wh=getWebDAVHeaders();if(!wh)return false;
+  const json=JSON.stringify(data,null,2);
+  if(wh.useProxy){
+    const base=wh.proxyHost||"http://localhost:3456";
+    try{const r=await fetch(base+"/api/push?url="+encodeURIComponent(wh.url)+"&user="+encodeURIComponent(wh.user)+"&pass="+encodeURIComponent(wh.pass),{method:"POST",headers:{"Content-Type":"application/json"},body:json});const j=await r.json();return j.ok}catch(e){return false}
+  }else{
+    try{const r=await fetch(wh.url,{method:"PUT",headers:{"Authorization":"Basic "+btoa(wh.user+":"+wh.pass),"Content-Type":"application/json"},body:json});return r.ok}catch(e){return false}
+  }
+}
+async function webdavPush(){
+  const wh=getWebDAVHeaders();if(!wh)return wdStatus("❌ 请先配置 WebDAV","#ef4444");
+  wdStatus("⏳ 正在上传…");const ok=await saveToWebDAV();
+  wdStatus(ok?"✅ 上传成功":"❌ 上传失败"+(wh.useProxy?"":" - 请勾选「使用本地代理服务器」"),ok?"#10b981":"#ef4444");
+}
+async function webdavPull(){
+  const wh=getWebDAVHeaders();if(!wh)return wdStatus("❌ 请先配置 WebDAV","#ef4444");
+  wdStatus("⏳ 正在拉取…");
+  try{
+    let json=null;
+    if(wh.useProxy){
+      const base=wh.proxyHost||"http://localhost:3456";
+      const r=await fetch(base+"/api/pull?url="+encodeURIComponent(wh.url)+"&user="+encodeURIComponent(wh.user)+"&pass="+encodeURIComponent(wh.pass));
+      const j=await r.json();if(!j.ok)return wdStatus("❌ 拉取失败："+j.msg,"#ef4444");json=j.data;
+    }else{
+      const r=await fetch(wh.url,{method:"GET",headers:{"Authorization":"Basic "+btoa(wh.user+":"+wh.pass)}});
+      if(!r.ok)return wdStatus("❌ 拉取失败 ("+r.status+")","#ef4444");json=await r.text();
+    }
+    const d=JSON.parse(json);
+    if(!d.projects||typeof d.projects!=='object')return wdStatus("❌ 云端数据格式不对","#ef4444");
+    if(!confirm('⚠️ 将用云端数据覆盖当前看板，确定继续？'))return;
+    data=d;saveData("☁️ 从云端拉取",true);currentProjId=data.currentProjId||Object.keys(data.projects)[0]||null;renderAll();
+    wdStatus("✅ 拉取成功","#10b981");
+  }catch(e){wdStatus("❌ 拉取失败："+e.message,"#ef4444")}
+}
+function showSyncScript(){
+  const overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:var(--modal-overlay);z-index:210;display:flex;align-items:center;justify-content:center";
+  overlay.onclick=function(e){if(e.target===this)document.body.removeChild(overlay)};
+  const box=document.createElement("div");box.style.cssText="background:var(--modal-bg);border-radius:12px;padding:20px 24px;max-width:580px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2)";
+  box.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<span style="font-size:15px;font-weight:600;color:var(--text)">📋 WebDAV 同步脚本</span>'
+    +'<button onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted)">✕</button></div>'
+    +'<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">在终端运行以下命令创建同步脚本，配合 <b>crontab</b> 可定时自动同步：</div>'
+    +'<pre style="font-size:11px;line-height:1.5;background:#1e293b;color:#e2e8f0;padding:12px;border-radius:8px;overflow-x:auto;white-space:pre-wrap;word-break:break-all">cat << \'SCRIPT\' > ~/kanban_sync.sh\n#!/bin/bash\n# 项目看板 WebDAV 同步脚本\n# 用法: bash ~/kanban_sync.sh (push|pull)\n# crontab -e 中添加: */30 * * * * bash ~/kanban_sync.sh push\n\nWEBDAV_URL="https://example.com/dav/kanban.json"\nAUTH="用户名:密码"  # 改成你的\nLOCAL_FILE="$HOME/Library/Application Support/项目看板.json"\n\n# 从浏览器 localStorage 导出:\n# 浏览器控制台输入: copy(localStorage.getItem("kanban_data"))\n# 然后粘贴到: echo \'{"粘贴的内容"}\' > "$LOCAL_FILE"\n\npush() {\n  if [ ! -f "$LOCAL_FILE" ]; then\n    echo "❌ 本地文件不存在，请先导出"\n    exit 1\n  fi\n  echo "⬆️ 上传到 WebDAV..."\n  curl -u "$AUTH" -T "$LOCAL_FILE" "$WEBDAV_URL"\n  echo "✅ 上传完成"\n}\n\npull() {\n  echo "⬇️ 从 WebDAV 下载..."\n  curl -u "$AUTH" -o "$LOCAL_FILE" "$WEBDAV_URL"\n  echo "✅ 下载完成，文件保存在: $LOCAL_FILE"\n  echo "💡 使用 备份→恢复 功能导入到看板"\n}\n\ncase "${1:-push}" in\n  push) push ;;\n  pull) pull ;;\n  *) echo "用法: $0 push|pull" ;;\nesac\nSCRIPT\nchmod +x ~/kanban_sync.sh\necho "✅ 脚本已创建: ~/kanban_sync.sh"\necho ""\necho "使用前请先编辑脚本，填入你的用户名和密码"\necho "然后运行: bash ~/kanban_sync.sh push"</pre>'
+    +'<div style="margin-top:10px;font-size:11px;color:var(--text-muted);padding:8px;background:var(--late-bg);border-radius:6px">'
+    +'💡 如果使用 Finder 挂载 WebDAV，直接用看板自带的「备份」和「恢复」按钮操作即可，不需要脚本。</div>'
+    +'<div class="modal-actions" style="margin-top:12px"><button class="btn-cancel" onclick="document.body.removeChild(this.parentNode.parentNode.parentNode)">关闭</button></div>';
+  overlay.appendChild(box);document.body.appendChild(overlay);
+}
+function getSearchHistory(){try{return JSON.parse(localStorage.getItem("kanban_search_history")||"[]")}catch(e){return[]}}
+function saveSearchHistory(q){
+  let h=getSearchHistory().filter(s=>s!==q);h.unshift(q);if(h.length>5)h=h.slice(0,5);
+  try{localStorage.setItem("kanban_search_history",JSON.stringify(h))}catch(e){}
+}
+function renderSearchHistory(){
+  const h=getSearchHistory(),c=document.getElementById("searchHistory");c.innerHTML="";
+  h.forEach(s=>{const b=document.createElement("button");b.textContent=s;
+    b.style.cssText="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--ghost-border);background:var(--surface);color:var(--text-secondary);cursor:pointer;transition:background .1s";
+    b.onmouseover=function(){this.style.background="var(--sidebar-hover)"};b.onmouseout=function(){this.style.background="var(--surface)"};
+    b.onclick=function(){const s=this.textContent;document.getElementById("searchInput").value=s;saveSearchHistory(s);performSearch(s);renderSearchHistory()};c.appendChild(b)
+  })
+}
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){const sm=document.getElementById("searchModal");if(sm.classList.contains("show"))hideModal("searchModal")}});
+function performSearch(q){
+  const r=document.getElementById("searchResults");r.innerHTML="";
+  if(!q||q.length<1)return;
+  const ql=q.toLowerCase();let count=0,html="";
+  for(const[pid,p]of Object.entries(data.projects)){
+    let pResults="";
+    for(const[ds,tasks]of Object.entries(p.tasks||{})){
+      const matched=tasks.filter(t=>{
+    // 基础匹配：内容、备注、模块、ID
+    if(t.content.toLowerCase().includes(ql)||(t.note||"").toLowerCase().includes(ql)||t.module.toLowerCase().includes(ql)||(t.id||"").toLowerCase().includes(ql))return true;
+    // 优先级匹配：p0-p3 或 P0紧急等
+    if(ql==="p0"||ql==="p1"||ql==="p2"||ql==="p3"){if(t.priority===ql)return true}
+    if(ql==="紧急"||ql==="紧急任务"){if(t.priority==="p0")return true}
+    if(ql==="重要"){if(t.priority==="p1")return true}
+    if(ql==="一般"||ql==="普通"){if(t.priority==="p2")return true}
+    if(ql==="低优"||ql==="低优先级"){if(t.priority==="p3")return true}
+    // 计划日期匹配
+    if(t.plannedDate&&(t.plannedDate.includes(ql)||t.plannedDate.slice(5).includes(ql)))return true;
+    // 完成日期匹配
+    if(t.completedAt&&(t.completedAt.includes(ql)||t.completedAt.slice(5,10).includes(ql)))return true;
+    // 状态匹配
+    if(ql==="逾期"||ql==="超期"||ql==="overdue"){const st=t.plannedDate?taskStatus(t):null;if(st==="overdue")return true}
+    if(ql==="延期"||ql==="late"){const st=t.plannedDate?taskStatus(t):null;if(st==="late")return true}
+    if(ql==="按期"||ql==="ontime"||ql==="按时"){const st=t.plannedDate?taskStatus(t):null;if(st==="ontime")return true}
+    return false
+  });
+      if(matched.length){
+        pResults+='<div style="font-size:11px;color:var(--text-muted);margin:4px 0 2px 10px">📅 '+ds+'</div>';
+        matched.forEach(t=>{
+          const priC=(PRIORITIES[t.priority||"p2"]||PRIORITIES.p2).color;
+          let meta=t.module;
+          if(t.plannedDate)meta+=' 📅'+t.plannedDate.slice(5);
+          if(t.done&&t.completedAt)meta+=' 🕐'+fmtCompleted(t.completedAt);
+          pResults+='<div style="padding:6px 10px;margin:1px 0;border-radius:6px;cursor:pointer;background:var(--surface);border:1px solid var(--ep-border);display:flex;align-items:center;gap:6px" onclick="hideModal(\'searchModal\');switchProject(\''+pid+'\');editTask(\''+t.id+'\')">'
+            +'<span style="width:14px;height:14px;border-radius:3px;background:'+priC+';flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600">'+((PRIORITIES[t.priority||"p2"]||PRIORITIES.p2).label).slice(1)+'</span>'
+            +'<span style="font-weight:500;color:var(--card-title);font-size:12px">'+highlight(t.content,q)+'</span>'
+            +'<span style="font-size:10px;color:var(--text-muted)">'+meta+'</span>'
+            +(t.done?'<span style="font-size:10px;color:var(--success)">✓</span>':'')
+            +'</div>';
+          count++
+        })
+      }
+    }
+    if(pResults){html+='<div style="margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">🏗️ '+p.name+'</div>'+pResults+'</div>'}
+  }
+  r.innerHTML=count?'<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">找到 '+count+' 个结果</div>'+html:'<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">没有找到匹配的任务</div>';
+}
+function highlight(t,q){const i=t.toLowerCase().indexOf(q.toLowerCase());if(i===-1)return escapeHtml(t);return escapeHtml(t.slice(0,i))+'<b style="color:var(--primary)">'+escapeHtml(t.slice(i,i+q.length))+'</b>'+escapeHtml(t.slice(i+q.length))}
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function switchProject(pid){const name=data.projects[pid]?data.projects[pid].name:pid;currentProjId=pid;data.currentProjId=pid;saveData("🔄 切换: "+name);renderAll()}
+function showToast(msg,color){
+  const t=document.createElement("div");
+  t.style.cssText="position:fixed;bottom:20px;right:20px;z-index:999;padding:8px 16px;border-radius:8px;font-size:12px;color:#fff;background:"+(color||"#10b981")+";box-shadow:0 4px 12px rgba(0,0,0,0.2);transition:opacity .3s";
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity="0";setTimeout(()=>{if(t.parentNode)t.parentNode.removeChild(t)},300)},2000);
+}
+function exportImage(mode){
+  const p=data.projects[currentProjId];if(!p)return alert("请先选择项目");
+  if(!mode)return showExportImageSelector();
+  const board=document.getElementById("board"),t=document.getElementById("projectTitle"),w=document.getElementById("weekLabel");
+  const isDark=document.body.classList.contains("dark"),bg=isDark?"#0f172a":"#fff";
+  html2canvas(board,{scale:2,useCORS:true,backgroundColor:bg,logging:false,
+    onclone:function(d){const ob=document.getElementById("board"),b=d.getElementById("board");
+      b.querySelectorAll(".delete-btn,.add-card-btn").forEach(e=>e.remove());
+      if(mode==="visible"){const oc=ob.querySelectorAll(".column-body");b.querySelectorAll(".column-body").forEach((c,i)=>{if(oc[i]){c.style.maxHeight=oc[i].offsetHeight+"px";c.style.overflow="hidden"}})}
+      const h=d.createElement("div");
+      h.textContent=t.textContent+" · "+w.textContent;
+      h.style.cssText="padding:0 0 12px 12px;font-size:16px;color:"+(isDark?"#e2e8f0":"#333");
+      b.parentNode.insertBefore(h,b);
+    }}).then(canvas=>{const a=document.createElement("a");
+    a.download="看板截图_"+p.name+"_"+fmtDate(new Date())+".png";
+    a.href=canvas.toDataURL("image/png");a.click();
+  }).catch(function(){alert("截图生成失败")});
+}
+function showExportImageSelector(){
+  const d=document.createElement("div");d.style.cssText="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center";
+  d.addEventListener("click",function(e){if(e.target===d)document.body.removeChild(d)});
+  const b=document.createElement("div");b.style.cssText="background:"+(document.body.classList.contains("dark")?"#1e293b":"#fff")+";border-radius:12px;padding:24px 28px;box-shadow:0 8px 32px rgba(0,0,0,0.2);text-align:center;min-width:260px";
+  b.innerHTML='<div style="font-size:14px;font-weight:600;margin-bottom:16px;color:'+(document.body.classList.contains("dark")?"#e2e8f0":"#333")+'">📸 截图范围</div><button class="btn-ghost" style="display:block;width:100%;padding:10px;margin-bottom:8px;font-size:14px;border:2px solid var(--primary);border-radius:8px;background:var(--surface);cursor:pointer" onclick="document.body.removeChild(this.parentNode.parentNode);exportImage(\'visible\')">👁️ 当前视图</button><button class="btn-ghost" style="display:block;width:100%;padding:10px;font-size:14px;border:2px dashed var(--primary);border-radius:8px;background:var(--surface);cursor:pointer" onclick="document.body.removeChild(this.parentNode.parentNode);exportImage(\'full\')">📋 全部内容</button>';
+  d.appendChild(b);document.body.appendChild(d);
+}
+
+// 初始化
+(function init(){const today=new Date(),monday=new Date(today);monday.setDate(today.getDate()-(today.getDay()===0?6:today.getDay()-1));document.getElementById("epStart").value=fmtDate(monday);document.getElementById("epEnd").value=fmtDate(today);initTheme()})();
+renderAll();
+saveData("🚀 初始状态",true);
+updateWebDAVButton();
+</script>
+</body>
+</html>
