@@ -195,8 +195,7 @@ body.dark .swimlane-board{background:transparent}
 
 /* ====== 模态框 ====== */
 .modal{display:none;position:fixed;inset:0;background:var(--modal-overlay);align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.modal.show{display:flex;animation:modalFadeIn .2s ease-out}
-@keyframes modalFadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.modal.show{display:flex}
 .modal-content{background:var(--modal-bg);border-radius:var(--radius-lg);padding:24px;width:650px;max-width:90vw;max-height:90vh;overflow-y:auto;transition:background .3s;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow-lg);border:1px solid var(--sidebar-border)}
 .modal-content h3{font-size:16px;margin-bottom:16px;color:var(--text);font-weight:600}
 .modal-preview{background:var(--ep-inner-bg);border-radius:var(--radius-sm);padding:14px;font-size:12px;white-space:pre-wrap;line-height:1.5;max-height:380px;overflow-y:auto;font-family:SFMono-Regular,Menlo,monospace;color:var(--ep-preview-text);border:1px solid var(--ep-inner-border)}
@@ -314,6 +313,7 @@ select option{background:var(--card-bg);color:var(--text)}
 }
 </style>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
 <body>
 
@@ -475,7 +475,8 @@ const PRIORITIES={p0:{label:'P0',color:'#ef4444',bg:'#fef2f2'},p1:{label:'P1',co
 function priorityCss(){let s='';Object.entries(PRIORITIES).forEach(([k,v])=>{s+='.card-tag.pri-'+k+'{background:'+v.bg+';color:'+v.color+';font-weight:500}'});return s+'.dark .card-tag.pri-p0{background:#3b1a1a;color:#fca5a5}.dark .card-tag.pri-p1{background:#3b2d14;color:#fcd34d}.dark .card-tag.pri-p2{background:#1e3a5f;color:#93c5fd}.dark .card-tag.pri-p3{background:#334155;color:#94a3b8}'}
 document.head.insertAdjacentHTML('beforeend','<style>'+priorityCss()+'</style>')
 
-let data=loadData(),currentProjId=data.currentProjId||null,currentWeekStart=getWeekStart(new Date()),editingTaskId=null,editingProjModules=[],lastReport=null,viewMode="week";
+let data=loadData(),currentProjId=data.currentProjId||(Object.keys(data.projects)[0]||null),currentWeekStart=getWeekStart(new Date()),editingTaskId=null,editingProjModules=[],lastReport=null,viewMode="week";
+if(currentProjId&&currentProjId!==data.currentProjId)data.currentProjId=currentProjId;
 
 function toggleTheme(){
   document.body.classList.toggle("dark");
@@ -683,12 +684,12 @@ function renderSwimlaneView(){
     c.addEventListener("dragend",function(){c.classList.remove("dragging")});
   });
 }
-function prevWeek(){currentWeekStart.setDate(currentWeekStart.getDate()-7);renderBoard()}
-function nextWeek(){currentWeekStart.setDate(currentWeekStart.getDate()+7);renderBoard()}
-function goToday(){currentWeekStart=getWeekStart(new Date());renderBoard()}
+function prevWeek(){currentWeekStart.setDate(currentWeekStart.getDate()-7);renderBoard();animateColumns()}
+function nextWeek(){currentWeekStart.setDate(currentWeekStart.getDate()+7);renderBoard();animateColumns()}
+function goToday(){currentWeekStart=getWeekStart(new Date());renderBoard();animateColumns()}
 
 function syncCompletedTime(){const cb=document.getElementById("taskDone"),ca=document.getElementById("taskCompletedAt");if(cb.checked&&!ca.value)ca.value=nowStr()}
-function toggleDone(id){const p=data.projects[currentProjId];let content="",wasDone=false;for(const d of Object.keys(p.tasks)){const t=p.tasks[d].find(x=>x.id===id);if(t){content=t.content;wasDone=t.done;t.done=!t.done;if(t.done&&!t.completedAt)t.completedAt=nowStr();else if(!t.done)t.completedAt="";break}}saveData(wasDone?"↩️ 取消: "+content.slice(0,20):"✅ 完成: "+content.slice(0,20));renderBoard();renderSidebar()}
+function toggleDone(id){const p=data.projects[currentProjId];let content="",wasDone=false;for(const d of Object.keys(p.tasks)){const t=p.tasks[d].find(x=>x.id===id);if(t){content=t.content;wasDone=t.done;t.done=!t.done;if(t.done&&!t.completedAt)t.completedAt=nowStr();else if(!t.done)t.completedAt="";break}}saveData(wasDone?"↩️ 取消: "+content.slice(0,20):"✅ 完成: "+content.slice(0,20));renderBoard();renderSidebar();if(typeof gsap!=='undefined'&&!wasDone){const card=document.querySelector('.card[data-id="'+id+'"]');if(card){gsap.fromTo(card,{scale:1.15,boxShadow:'0 0 20px rgba(16,185,129,0.4)'},{scale:1,boxShadow:'0 1px 3px rgba(0,0,0,0.04)',duration:0.5,ease:'elastic.out(1,0.4)'})}}}
 
 function showTaskModal(ds){
   editingTaskId=null;const p=data.projects[currentProjId];
@@ -699,7 +700,7 @@ function showTaskModal(ds){
   document.getElementById("taskPlanned").value="";document.getElementById("taskCompletedAt").value="";
   document.getElementById("taskDone").checked=false;sel.dataset.date=ds;
   document.getElementById("deleteTaskBtn").style.display="none";document.getElementById("taskStatusBadge").innerHTML="";
-  document.getElementById("taskModal").classList.add("show");
+  showModal("taskModal");
 }
 function editTask(id){
   editingTaskId=id;const p=data.projects[currentProjId];
@@ -716,7 +717,7 @@ function editTask(id){
     else if(st==='ontime')badge.innerHTML='<div class="info-badge ontime">✅ 按期完成</div>';
     else badge.innerHTML="";
   }
-  document.getElementById("deleteTaskBtn").style.display="inline-block";document.getElementById("taskModal").classList.add("show");
+  document.getElementById("deleteTaskBtn").style.display="inline-block";showModal("taskModal");
 }
 function saveTask(){
   const c=document.getElementById("taskContent").value.trim();if(!c)return alert("请输入任务内容");
@@ -738,7 +739,7 @@ function showProjectModal(edit){
   const cc=document.getElementById("colorOptions");cc.innerHTML="";
   COLORS.forEach(c=>{const div=document.createElement("div");div.className="color-opt"+((isEdit&&data.projects[currentProjId].color===c)||(!isEdit&&c==="#4f6ef7")?" selected":"");div.style.background=c;div.onclick=function(){cc.querySelectorAll(".color-opt").forEach(el=>el.classList.remove("selected"));this.classList.add("selected")};cc.appendChild(div)});
   document.getElementById("projName").value=isEdit?data.projects[currentProjId].name:"";document.getElementById("deleteProjBtn").style.display=isEdit?"inline-block":"none";
-  renderProjModules(isEdit?data.projects[currentProjId].modules:["基础数据"]);document.getElementById("projectModal").classList.add("show");
+  renderProjModules(isEdit?data.projects[currentProjId].modules:["基础数据"]);showModal("projectModal");
 }
 function renderProjModules(mods){editingProjModules=[...mods];const el=document.getElementById("projModuleList");el.innerHTML="";editingProjModules.forEach((m,i)=>{const s=document.createElement("span");s.className="tag-item";s.innerHTML=m+' <span class="remove" onclick="removeProjModule('+i+')">✕</span>';el.appendChild(s)})}
 function addProjModule(){const v=document.getElementById("projModuleInput").value.trim();if(!v||editingProjModules.includes(v))return;editingProjModules.push(v);renderProjModules(editingProjModules);document.getElementById("projModuleInput").value=""}
@@ -752,11 +753,12 @@ function epDirty(){lastReport=null;document.getElementById("epPreview").classNam
 function getFilteredTasks(startStr,endStr){const p=data.projects[currentProjId];if(!p)return null;const start=new Date(startStr),end=new Date(endStr);end.setHours(23,59,59,999);const all=[];for(const[ds,tasks]of Object.entries(p.tasks)){const d=new Date(ds);if(d>=start&&d<=end)all.push(...tasks.map(t=>({...t,ds})))}all.sort((a,b)=>a.ds.localeCompare(b.ds));return all}
 function generateReport(){const s=document.getElementById("epStart").value,e=document.getElementById("epEnd").value;if(!s||!e)return alert("请先选择日期范围");const tasks=getFilteredTasks(s,e);if(!tasks||!tasks.length)return alert("所选日期范围内没有任务");const proj=data.projects[currentProjId];const kw=document.getElementById("epKeywords").value.trim();const done=tasks.filter(t=>t.done),overdue=tasks.filter(t=>!t.done&&taskStatus(t)==='overdue'),other=tasks.filter(t=>!t.done&&taskStatus(t)!=='overdue');const byMod={};tasks.forEach(t=>{if(!byMod[t.module])byMod[t.module]={done:[],undone:[]};if(t.done)byMod[t.module].done.push(t);else byMod[t.module].undone.push(t)});const moduleSummary=Object.entries(byMod).map(([m,g])=>m+'（完成'+g.done.length+'/'+(g.done.length+g.undone.length)+'）').join('、');const weekLabel=fmtDisplay(new Date(s))+'~'+fmtDisplay(new Date(e));let r='## 📊 本周概要\n\n**项目**：'+proj.name+'　　**期间**：'+weekLabel+'\n\n| 分类 | 数量 |\n|------|------|\n| ✅ 已完成 | '+done.length+' |\n| ⏰ 逾期 | '+overdue.length+' |\n| 📝 进行中 | '+other.length+' |\n| **合计** | **'+tasks.length+'** |\n\n**涉及模块**：'+moduleSummary+'\n\n';if(kw)r+='**关注方向**：'+kw+'\n\n';r+='---\n\n## 📋 详细事项\n\n';done.forEach(t=>{r+='- ✅ *完成* '+t.content+'【'+t.module+'】'+(t.note?' — '+t.note:'')+'\n'});overdue.forEach(t=>{r+='- ⏰ *逾期* '+t.content+'【'+t.module+'】'+(t.note?' — '+t.note:'')+'\n'});other.forEach(t=>{r+='- 📝 *待办* '+t.content+'【'+t.module+'】'+(t.note?' — '+t.note:'')+'\n'});r+='\n---\n\n';if(kw)r+='## 🎯 重点关注\n根据关键词「'+kw+'」，本周需特别关注：\n- （请在 Prompt 中向 AI 说明具体要求）\n\n';r+='## 🤖 AI 周报撰写\n将以下内容作为 Prompt 输入给 AI：\n\n> 请根据以下本周运维工作记录，写一份正式的周报。\n> 项目名称：'+proj.name+'\n> 日期范围：'+weekLabel+'\n'+(kw?'\n> 重点关注：'+kw+'\n':'')+'\n> ### 本周工作记录\n';tasks.forEach(t=>{r+='> - ['+(t.done?'x':' ')+'] '+t.content+'（'+t.module+'）—— '+t.note+'\n'});r+='\n> 请用中文分条输出，包含：本周完成、待办事项、风险提示、下周计划。';lastReport=r;const el=document.getElementById("epPreview");el.className="ep-preview";el.textContent=r}
 function copyPrompt(){if(!lastReport)return alert("请先生成周报");const s=document.getElementById("epStart").value,e=document.getElementById("epEnd").value;const tasks=getFilteredTasks(s,e);if(!tasks||!tasks.length)return;const proj=data.projects[currentProjId];const kw=document.getElementById("epKeywords").value.trim();const done=tasks.filter(t=>t.done),overdue=tasks.filter(t=>!t.done&&taskStatus(t)==='overdue'),other=tasks.filter(t=>!t.done&&taskStatus(t)!=='overdue');let p='请根据以下本周运维工作记录，写一份正式的周报。\n项目名称：'+proj.name+'\n日期范围：'+fmtDisplay(new Date(s))+'~'+fmtDisplay(new Date(e))+'\n';if(kw)p+='重点关注：'+kw+'\n';p+='\n### 统计\n已完成：'+done.length+' 逾期：'+overdue.length+' 进行中：'+other.length+' 合计：'+tasks.length+'\n\n### 本周工作记录\n';tasks.forEach(t=>{p+='- ['+(t.done?'x':' ')+'] '+t.content+'（'+t.module+'）'+(t.note?' —— '+t.note:'')+'\n'});p+='\n### 要求\n1. 用中文分条输出\n2. 包含：本周完成、待办事项、风险提示、下周计划\n3. 条理清晰，语言正式\n';navigator.clipboard.writeText(p).then(()=>alert("✅ Prompt 已复制，可直接粘贴到 ChatGPT / Claude / DeepSeek 使用")).catch(()=>alert("复制失败"))}
-function confirmExport(){if(!lastReport)return alert("请先生成周报，再导出");const text=buildObsidianExport(document.getElementById("epStart").value,document.getElementById("epEnd").value);if(!text)return alert("导出内容为空");document.getElementById("exportConfirmPreview").textContent=text;document.getElementById("exportConfirmModal").classList.add("show")}
+function confirmExport(){if(!lastReport)return alert("请先生成周报，再导出");const text=buildObsidianExport(document.getElementById("epStart").value,document.getElementById("epEnd").value);if(!text)return alert("导出内容为空");document.getElementById("exportConfirmPreview").textContent=text;showModal("exportConfirmModal")}
 function doExportMd(){const s=document.getElementById("epStart").value,e=document.getElementById("epEnd").value;const proj=data.projects[currentProjId];if(!proj)return;const text=buildObsidianExport(s,e);const blob=new Blob([text],{type:"text/markdown"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=proj.name+'_周报_'+s+'.md';a.click();hideModal("exportConfirmModal")}
 function buildObsidianExport(startStr,endStr){const p=data.projects[currentProjId];if(!p)return"";const start=new Date(startStr),end=new Date(endStr);end.setHours(23,59,59,999);const weekLabel=fmtDisplay(start)+' ~ '+fmtDisplay(end);let allTasks=[];for(const[ds,tasks]of Object.entries(p.tasks)){const d=new Date(ds);if(d>=start&&d<=end)allTasks.push(...tasks.map(t=>({...t,ds})))}allTasks.sort((a,b)=>a.ds.localeCompare(b.ds));const total=allTasks.length,doneArr=allTasks.filter(t=>t.done),overdueArr=allTasks.filter(t=>!t.done&&taskStatus(t)==='overdue'),otherArr=allTasks.filter(t=>!t.done&&taskStatus(t)!=='overdue');let r='---\ntags: ['+p.name+', 周报]\ncreated: '+fmtDate(new Date())+'\nproject: '+p.name+'\nweek: '+weekLabel+'\n---\n\n# '+p.name+' · 周报（'+weekLabel+'）\n\n## 📊 统计\n\n| 状态 | 数量 | 占比 |\n|------|------|------|\n| ✅ 已完成 | '+doneArr.length+' | '+(total?Math.round(doneArr.length/total*100)+'%':'0%')+' |\n| ⏰ 逾期未完成 | '+overdueArr.length+' | '+(total?Math.round(overdueArr.length/total*100)+'%':'0%')+' |\n| 📝 待处理 | '+otherArr.length+' | '+(total?Math.round(otherArr.length/total*100)+'%':'0%')+' |\n| **合计** | **'+total+'** | **100%** |\n\n';if(doneArr.length){r+='## ✅ 已完成\n\n';doneArr.forEach(t=>{r+='- [x] '+t.content+'（'+t.module+'）'+(t.note?' — '+t.note:'')+' 📅'+t.plannedDate+' 🕐'+t.completedAt.slice(5,16)+'\n'});r+='\n'}if(overdueArr.length){r+='## ⏰ 逾期未完成\n\n';overdueArr.forEach(t=>{r+='- [ ] '+t.content+'（'+t.module+'）'+(t.note?' — '+t.note:'')+' 📅'+t.plannedDate+'（已逾期）\n'});r+='\n'}if(otherArr.length){r+='## 📝 待处理\n\n';otherArr.forEach(t=>{r+='- [ ] '+t.content+'（'+t.module+'）'+(t.note?' — '+t.note:'')+(t.plannedDate?' 📅'+t.plannedDate:'')+'\n'});r+='\n'}return r}
 
-function hideModal(id){document.getElementById(id).classList.remove("show")}
+function showModal(id){const m=document.getElementById(id);m.classList.add("show");if(typeof gsap!=='undefined'){const c=m.querySelector(".modal-content");if(c)gsap.fromTo(c,{opacity:0,scale:0.92,y:20},{opacity:1,scale:1,y:0,duration:0.3,ease:'back.out(1.4)'})}}
+function hideModal(id){const m=document.getElementById(id);if(typeof gsap!=='undefined'){const c=m.querySelector(".modal-content");if(c){gsap.to(c,{opacity:0,scale:0.95,duration:0.2,ease:'power2.in',onComplete:()=>{m.classList.remove("show");gsap.set(c,{opacity:1,scale:1})}})}else{m.classList.remove("show")}}else{m.classList.remove("show")}}
 function showStats(){
   const p=data.projects[currentProjId];if(!p)return alert("请先选择项目");
   const dates=getWeekDates(currentWeekStart);let all=[];
@@ -780,14 +782,14 @@ function showStats(){
   h+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
   Object.entries(byPri).forEach(([k,c])=>{if(!c)return;const l=(PRIORITIES[k]||PRIORITIES.p2).label;h+='<tr><td style="color:var(--text-secondary);padding:4px 8px;border-bottom:1px solid var(--ep-border)">'+l+'</td><td style="color:var(--text);padding:4px 8px;border-bottom:1px solid var(--ep-border);font-weight:500;text-align:right">'+c+'</td></tr>'});
   h+='</table></div>';
-  document.getElementById("statsContent").innerHTML=h;document.getElementById("statsModal").classList.add("show");
+  document.getElementById("statsContent").innerHTML=h;showModal("statsModal");
 }
 function renderAll(){renderSidebar();renderBoard()}
 function resetCurrentProject(){if(!currentProjId||!data.projects[currentProjId])return alert("请先选择项目");if(!confirm('‼️ 确认清空「'+data.projects[currentProjId].name+'」的所有任务数据？'))return;if(!confirm('⚠️ 再次确认：此操作会删除当前项目的全部任务，不可恢复！\n\n确定要清空吗？'))return;data.projects[currentProjId].tasks={};saveData("🗑️ 清空项目: "+data.projects[currentProjId].name,true);renderAll()}
 function loadDemoProject(){const demo=data.projects["demo_sysops"];if(demo&&Object.keys(demo.tasks||{}).length>0){currentProjId="demo_sysops";data.currentProjId="demo_sysops";saveData("📖 加载演示数据",true);renderAll();return}const def=getDefaultData().projects["demo_sysops"];if(!data.projects["demo_sysops"])data.projects["demo_sysops"]={id:"demo_sysops",name:def.name,color:def.color,modules:[...def.modules],tasks:{}};Object.entries(def.tasks).forEach(([ds,tasks])=>{data.projects["demo_sysops"].tasks[ds]=tasks.map(t=>({...t}))});currentProjId="demo_sysops";data.currentProjId="demo_sysops";saveData("📖 加载演示数据",true);renderAll()}
 function backupData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download='kanban_backup_'+fmtDate(new Date())+'.json';a.click()}
 function restoreData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){try{const d=JSON.parse(e.target.result);if(!d.projects||typeof d.projects!=='object')throw new Error("格式不对");if(!confirm('恢复数据将覆盖当前全部内容，确定继续？'))return;data=d;saveData(null,true);currentProjId=data.currentProjId||Object.keys(data.projects)[0]||null;renderAll();alert("✅ 数据已恢复")}catch(err){alert("❌ 备份文件格式错误："+err.message)}finally{event.target.value=""}};reader.readAsText(file)}
-function showSearchModal(){const sm=document.getElementById("searchModal");document.getElementById("searchInput").value="";document.getElementById("searchResults").innerHTML="";sm.classList.add("show");sm.onclick=function(e){if(e.target===this)hideModal("searchModal")};renderSearchHistory();setTimeout(()=>document.getElementById("searchInput").focus(),100)}
+function showSearchModal(){const sm=document.getElementById("searchModal");document.getElementById("searchInput").value="";document.getElementById("searchResults").innerHTML="";showModal("searchModal");sm.onclick=function(e){if(e.target===this)hideModal("searchModal")};renderSearchHistory();setTimeout(()=>document.getElementById("searchInput").focus(),100)}
 function showHistory(){
   let hist=[];try{hist=JSON.parse(localStorage.getItem("kanban_history")||"[]")}catch(e){}
   if(!hist.length)return alert("暂无版本历史");
@@ -1085,6 +1087,17 @@ function showExportImageSelector(){
 renderAll();
 saveData("🚀 初始状态",true);
 updateWebDAVButton();
+animateColumns();
+
+// === GSAP 页面加载动画（仅侧边栏和顶栏，无卡片动画）===
+// 页面加载不做任何卡片动画，避免渲染冲突
+function animateColumns(){
+  if(typeof gsap==='undefined')return;
+  var cols=document.querySelectorAll('#board .column');
+  if(cols.length)gsap.fromTo(cols,{y:30,opacity:0},{y:0,opacity:1,duration:0.4,stagger:0.06,ease:'power3.out'});
+  var cards=document.querySelectorAll('#board .card');
+  if(cards.length)gsap.fromTo(cards,{y:20,opacity:0},{y:0,opacity:1,duration:0.35,stagger:0.04,ease:'power2.out'});
+}
 </script>
 </body>
 </html>
